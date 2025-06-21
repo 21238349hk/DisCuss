@@ -52,7 +52,7 @@ function SessionList({ currentUser }) {
   };
 
   const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type, sessionId) => {
-    const approvalUrl = `https://yourapp.com/approval/${sessionId}`;
+    const approvalUrl = `https://gd-tanyao.web.app`;
 
     return emailjs.send(
       'service_a9mr7c2',
