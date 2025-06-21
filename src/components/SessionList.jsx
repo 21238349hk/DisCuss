@@ -125,11 +125,6 @@ function SessionList({ currentUser }) {
                 <p><strong>所要時間:</strong> {session.duration_minutes}分</p>
                 <p><strong>最大参加者数:</strong> {session.max_participants}人</p>
                 <p><strong>開催方式:</strong> {session.meeting_method}</p>
-                {session.meeting_method === 'オンライン' && session.zoom_link && (
-                  <p>
-                    <strong>Zoomリンク:</strong> <a href={session.zoom_link} target="_blank" rel="noopener noreferrer">{session.zoom_link}</a>
-                  </p>
-                )}
               </div>
 
               <div className="session-actions">
