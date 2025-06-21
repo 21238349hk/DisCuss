@@ -4,7 +4,7 @@ import '../styles/SessionList.css';
 import emailjs from 'emailjs-com';
 import { collection, query, orderBy, onSnapshot, addDoc } from 'firebase/firestore';
 
-function SessionList({ currentUser }) {
+function SessionList({ searchQuery, currentUser }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,41 +17,29 @@ function SessionList({ currentUser }) {
     const sessionsCollectionRef = collection(db, 'sessions');
     const q = query(sessionsCollectionRef, orderBy('session_datetime', 'asc'));
 
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const sessionsData = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          const sessionDateTime = data.session_datetime?.toDate() || null;
-          const createdAt = data.createdAt?.toDate() || null;
-          const updatedAt = data.updatedAt?.toDate() || null;
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const sessionsData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const sessionDateTime = data.session_datetime?.toDate() || null;
+        const createdAt = data.createdAt?.toDate() || null;
+        const updatedAt = data.updatedAt?.toDate() || null;
 
-          return {
-            id: doc.id,
-            ...data,
-            session_date: sessionDateTime
-              ? sessionDateTime.toLocaleDateString('ja-JP')
-              : 'N/A',
-            start_time: sessionDateTime
-              ? sessionDateTime.toTimeString().substring(0, 5)
-              : 'N/A',
-            createdAt: createdAt
-              ? createdAt.toLocaleString('ja-JP')
-              : 'N/A',
-            updatedAt: updatedAt
-              ? updatedAt.toLocaleString('ja-JP')
-              : 'N/A',
-          };
-        });
-        setSessions(sessionsData);
-        setLoading(false);
-      },
-      (err) => {
-        console.error('セッションの取得エラー:', err);
-        setError('セッションの読み込みに失敗しました。');
-        setLoading(false);
-      }
-    );
+        return {
+          id: doc.id,
+          ...data,
+          session_date: sessionDateTime ? sessionDateTime.toLocaleDateString('ja-JP') : 'N/A',
+          start_time: sessionDateTime ? sessionDateTime.toTimeString().substring(0, 5) : 'N/A',
+          createdAt: createdAt ? createdAt.toLocaleString('ja-JP') : 'N/A',
+          updatedAt: updatedAt ? updatedAt.toLocaleString('ja-JP') : 'N/A',
+        };
+      });
+      setSessions(sessionsData);
+      setLoading(false);
+    }, (err) => {
+      console.error('セッションの取得エラー:', err);
+      setError('セッションの読み込みに失敗しました。');
+      setLoading(false);
+    });
 
     return () => unsubscribe();
   }, []);
@@ -62,34 +50,25 @@ function SessionList({ currentUser }) {
     setShowModal(true);
   };
 
-  const sendEmailToOwner = (
-    ownerEmail,
-    sessionTitle,
-    requesterEmail,
-    type,
-    sessionId
-  ) => {
+  const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type, sessionId) => {
     const approvalUrl = `https://yourapp.com/approval/${sessionId}`;
 
-    emailjs
-      .send(
-        'YOUR_SERVICE_ID',
-        'YOUR_TEMPLATE_ID',
-        {
-          to_email: ownerEmail,
-          sessionTitle,
-          requesterEmail,
-          type,
-          approvalUrl,
-        },
-        'YOUR_PUBLIC_KEY'
-      )
-      .then(() => {
-        console.log('通知メール送信完了');
-      })
-      .catch((err) => {
-        console.error('メール送信エラー:', err);
-      });
+    emailjs.send(
+      'YOUR_SERVICE_ID',
+      'YOUR_TEMPLATE_ID',
+      {
+        to_email: ownerEmail,
+        sessionTitle,
+        requesterEmail,
+        type,
+        approvalUrl,
+      },
+      'YOUR_PUBLIC_KEY'
+    ).then(() => {
+      console.log('通知メール送信完了');
+    }).catch((err) => {
+      console.error('メール送信エラー:', err);
+    });
   };
 
   const handleConfirm = async () => {
@@ -126,76 +105,42 @@ function SessionList({ currentUser }) {
   if (loading) return <p>セッションを読み込み中...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
+  const filteredSessions = sessions.filter((session) =>
+    session.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="session-container">
       <h1>セッション一覧</h1>
-      {sessions.length === 0 ? (
-        <p>まだセッションがありません。</p>
+
+      {filteredSessions.length === 0 ? (
+        <p>該当するセッションがありません。</p>
       ) : (
         <ul className="session-list">
-          {sessions.map((session) => (
+          {filteredSessions.map((session) => (
             <li key={session.id} className="session-item float-animate">
               <div className="session-content">
                 <h2>{session.title}</h2>
-                <p>
-                  <strong>説明:</strong> {session.description}
-                </p>
-                <p>
-                  <strong>ディスカッションテーマ:</strong>{' '}
-                  {session.discussion_theme || 'N/A'}
-                </p>
-                <p>
-                  <strong>難易度:</strong> {session.difficulty || 'N/A'}
-                </p>
-                <p>
-                  <strong>開催日:</strong> {session.session_date}
-                </p>
-                <p>
-                  <strong>開始時間:</strong> {session.start_time}
-                </p>
-                <p>
-                  <strong>所要時間:</strong> {session.duration_minutes}分
-                </p>
-                <p>
-                  <strong>最大参加者数:</strong> {session.max_participants}人
-                </p>
-                <p>
-                  <strong>開催方式:</strong> {session.meeting_method}
-                </p>
-                {session.meeting_method === 'オンライン' &&
-                  session.zoom_link && (
-                    <p>
-                      <strong>Zoomリンク:</strong>{' '}
-                      <a
-                        href={session.zoom_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {session.zoom_link}
-                      </a>
-                    </p>
-                  )}
+                <p><strong>説明:</strong> {session.description}</p>
+                <p><strong>ディスカッションテーマ:</strong> {session.discussion_theme || 'N/A'}</p>
+                <p><strong>難易度:</strong> {session.difficulty || 'N/A'}</p>
+                <p><strong>開催日:</strong> {session.session_date}</p>
+                <p><strong>開始時間:</strong> {session.start_time}</p>
+                <p><strong>所要時間:</strong> {session.duration_minutes}分</p>
+                <p><strong>最大参加者数:</strong> {session.max_participants}人</p>
+                <p><strong>開催方式:</strong> {session.meeting_method}</p>
+                {session.meeting_method === 'オンライン' && session.zoom_link && (
+                  <p><strong>Zoomリンク:</strong> <a href={session.zoom_link} target="_blank" rel="noopener noreferrer">{session.zoom_link}</a></p>
+                )}
               </div>
 
               <div className="session-actions">
-                <button
-                  className="request-button join"
-                  onClick={() => openModal(session, '参加')}
-                >
-                  参加申請
-                </button>
-                <button
-                  className="request-button observe"
-                  onClick={() => openModal(session, '見学')}
-                >
-                  見学申請
-                </button>
+                <button className="request-button join" onClick={() => openModal(session, '参加')}>参加申請</button>
+                <button className="request-button observe" onClick={() => openModal(session, '見学')}>見学申請</button>
               </div>
 
               <div className="session-meta-container">
-                <p className="session-meta">
-                  作成日時: {session.createdAt} | 更新日時: {session.updatedAt}
-                </p>
+                <p className="session-meta">作成日時: {session.createdAt} | 更新日時: {session.updatedAt}</p>
               </div>
             </li>
           ))}
@@ -206,26 +151,12 @@ function SessionList({ currentUser }) {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>申請の確認</h2>
-            <p>
-              <strong>セッション名:</strong> {selectedSession.title}
-            </p>
-            <p>
-              <strong>申請種別:</strong> {requestType}
-            </p>
-            <p>
-              <strong>開催日:</strong> {selectedSession.session_date}{' '}
-              {selectedSession.start_time}〜
-            </p>
+            <p><strong>セッション名:</strong> {selectedSession.title}</p>
+            <p><strong>申請種別:</strong> {requestType}</p>
+            <p><strong>開催日:</strong> {selectedSession.session_date} {selectedSession.start_time}〜</p>
             <div className="modal-actions">
-              <button onClick={handleConfirm} className="button-confirm">
-                送信する
-              </button>
-              <button
-                onClick={() => setShowModal(false)}
-                className="button-cancel"
-              >
-                キャンセル
-              </button>
+              <button onClick={handleConfirm} className="button-confirm">送信する</button>
+              <button onClick={() => setShowModal(false)} className="button-cancel">キャンセル</button>
             </div>
           </div>
         </div>
