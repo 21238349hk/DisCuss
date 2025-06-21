@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { db } from '../firebase-config'; // db のみをインポート
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; // Firestore関数
-import '../styles/SessionCreateForm.css';
+import '../styles/SessionCreateForm.css'; // CSSファイルをインポート
 
 function SessionCreateForm() {
   const [formData, setFormData] = useState({
@@ -19,6 +19,7 @@ function SessionCreateForm() {
   });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false); // 確認モーダル表示のstate
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,32 +33,34 @@ function SessionCreateForm() {
     e.preventDefault();
     setMessage('');
     setError('');
+    setShowConfirmation(true); // 確認モーダルを表示
+  };
+
+  const handleConfirm = async () => {
+    setMessage('');
+    setError('');
+    setShowConfirmation(false); // モーダルを閉じる
 
     try {
-      // 'sessions' コレクションへの参照を取得
       const sessionsCollectionRef = collection(db, 'sessions');
 
-      // フォームデータをFirestoreに保存する形式に調整
       const sessionDataToSave = {
         title: formData.title,
         description: formData.description,
         discussion_theme: formData.discussion_theme,
         difficulty: formData.difficulty,
-        session_datetime: new Date(`${formData.session_date}T${formData.start_time}`), // Dateオブジェクトとして保存
+        session_datetime: new Date(`${formData.session_date}T${formData.start_time}`),
         duration_minutes: Number(formData.duration_minutes),
         max_participants: Number(formData.max_participants),
         meeting_method: formData.meeting_method,
         zoom_link: formData.meeting_method === 'オンライン' ? formData.zoom_link : null,
-        // file_url: fileUrl, // ★ 削除: ファイルURLは保存しない
-        createdAt: serverTimestamp(), // Firestore側で作成日時を記録
-        updatedAt: serverTimestamp(), // Firestore側で更新日時を記録
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
-      // 新しいドキュメントをコレクションに追加
       const docRef = await addDoc(sessionsCollectionRef, sessionDataToSave);
       setMessage(`セッションが正常に作成されました。ドキュメントID: ${docRef.id}`);
-      // フォームのリセット
-      setFormData({
+      setFormData({ // フォームのリセット
         title: '', description: '', discussion_theme: '', difficulty: '',
         session_date: '', start_time: '', duration_minutes: 40, max_participants: 6,
         meeting_method: 'オンライン', zoom_link: '',
@@ -69,71 +72,107 @@ function SessionCreateForm() {
     }
   };
 
+  const handleCancel = () => {
+    setShowConfirmation(false); // モーダルを閉じる
+    setMessage(''); // メッセージをクリア
+    setError(''); // エラーをクリア
+  };
+
   return (
-    <div>
-      <h1>セッション作成</h1>
-      <form onSubmit={handleSubmit}>
-        <div type="kontena">
-          <h2>基本情報</h2>
-          {/* 既存のフォーム要素 (ファイルアップロード欄は削除) */}
+    <div className="session-form-container">
+      <h1>新しいGDセッションを作成</h1>
+      <p className="form-description">他の就活生と一緒に学べるセッションを企画しましょう</p>
+
+      <div className="form-section">
+        <h2 className="section-title">基本情報</h2>
+        <form onSubmit={handleSubmit}>
           <div>
             <label>セッションタイトル*:</label>
-            <input type="text" name="title" value={formData.title} onChange={handleChange} required />
+            <input type="text" name="title" value={formData.title} onChange={handleChange} required placeholder="例: 金融業界志望者向けGD" />
           </div>
           <div>
             <label>セッション説明*:</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} required></textarea>
+            <textarea name="description" value={formData.description} onChange={handleChange} required placeholder="セッションの目的や内容について詳しく説明してください..." rows="5"></textarea>
           </div>
           <div>
-            <label>ディスカッションテーマ:</label>
-            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} />
+            <label>ディスカッションテーマ*:</label>
+            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required placeholder="例: 新規事業立案" />
+          </div>
+          <div className="form-row">
+            <div>
+              <label>難易度:</label>
+              <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
+                <option value="">選択してください</option>
+                <option value="初級">初級</option>
+                <option value="中級">中級 (ある程度の経験あり)</option>
+                <option value="上級">上級</option>
+              </select>
+            </div>
           </div>
           <div>
-            <label>難易度:</label>
-            <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
-              <option value="">選択してください</option>
-              <option value="初級">初級</option>
-              <option value="中級">中級</option>
-              <option value="上級">上級</option>
+            <label>開催日*:</label>
+            <input type="date" name="session_date" value={formData.session_date} onChange={handleChange} required />
+          </div>
+          <div>
+            <label>開始時間*:</label>
+            <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
+          </div>
+          <div>
+            <label>所要時間 (分)*:</label>
+            <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} required min={5} max={40} />
+          </div>
+          <div>
+            <label>最大参加者数*:</label>
+            <input type="number" name="max_participants" value={formData.max_participants} onChange={handleChange} required />
+          </div>
+          <div>
+            <label>開催方式*:</label>
+            <select name="meeting_method" value={formData.meeting_method} onChange={handleChange} required>
+              <option value="オンライン">オンライン</option>
+              <option value="対面">対面</option>
             </select>
           </div>
-        </div>
+          {formData.meeting_method === 'オンライン' && (
+            <div>
+              <label>Zoom招待リンク:</label>
+              <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} placeholder="https://zoom.us/j/..." />
+            </div>
+          )}
 
-        <div>
-          <label>開催日*:</label>
-          <input type="date" name="session_date" value={formData.session_date} onChange={handleChange} required />
-        </div>
-        <div>
-          <label>開始時間*:</label>
-          <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
-        </div>
-        <div>
-          <label>所要時間 (分)*:</label>
-          <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} required min={5} max={40}/>
-        </div>
-        <div>
-          <label>最大参加者数*:</label>
-          <input type="number" name="max_participants" value={formData.max_participants} onChange={handleChange} required />
-        </div>
-        <div>
-          <label>開催方式*:</label>
-          <select name="meeting_method" value={formData.meeting_method} onChange={handleChange} required>
-            <option value="オンライン">オンライン</option>
-            <option value="対面">対面</option>
-          </select>
-        </div>
-        {formData.meeting_method === 'オンライン' && (
-          <div>
-            <label>Zoom招待リンク:</label>
-            <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} placeholder="https://zoom.us/j/..." />
-          </div>
-        )}
-        {/* ★ 削除: ファイルアップロード用の入力フィールドは含めない */}
+          <button type="submit">セッションを保存</button>
+        </form>
+      </div>
 
-        <button type="submit">セッションを保存</button>
-      </form>
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {/* 確認モーダル */}
+      {showConfirmation && (
+        <div className="confirmation-modal-overlay">
+          <div className="confirmation-modal-content">
+            <h2>入力内容の確認</h2>
+            <p>以下の内容でセッションを作成します。よろしいですか？</p>
+            <div className="confirmation-details">
+              <p><strong>セッションタイトル:</strong> {formData.title}</p>
+              <p><strong>セッション説明:</strong> {formData.description}</p>
+              <p><strong>ディスカッションテーマ:</strong> {formData.discussion_theme || 'N/A'}</p>
+              <p><strong>難易度:</strong> {formData.difficulty || 'N/A'}</p>
+              <p><strong>開催日:</strong> {formData.session_date}</p>
+              <p><strong>開始時間:</strong> {formData.start_time}</p>
+              <p><strong>所要時間:</strong> {formData.duration_minutes}分</p>
+              <p><strong>最大参加者数:</strong> {formData.max_participants}人</p>
+              <p><strong>開催方式:</strong> {formData.meeting_method}</p>
+              {formData.meeting_method === 'オンライン' && formData.zoom_link && (
+                <p><strong>Zoom招待リンク:</strong> {formData.zoom_link}</p>
+              )}
+            </div>
+            <div className="confirmation-buttons">
+              <button onClick={handleConfirm} className="confirm-button">決定</button>
+              <button onClick={handleCancel} className="cancel-button">やり直す</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
