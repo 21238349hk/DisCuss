@@ -55,7 +55,7 @@ function SessionList() {
       ) : (
         <ul className="session-list">
           {sessions.map((session) => (
-            <li key={session.id} className="session-item">
+            <li key={session.id} className="session-item float-animate">
               <h2>{session.title}</h2>
               <p><strong>説明:</strong> {session.description}</p>
               <p><strong>ディスカッションテーマ:</strong> {session.discussion_theme || 'N/A'}</p>

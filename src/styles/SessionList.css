@@ -68,3 +68,17 @@
   margin-top: 0.75rem;
   text-align: right;
 }
+
+
+.float-animate {
+  animation: floatUp 0.6s ease-out forwards;
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+@keyframes floatUp {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

@@ -1,5 +1,6 @@
 // frontend/src/components/SessionCreateForm.js
 import React, { useState } from 'react';
+import '../styles/SessionCreateForm.css'
 import { db } from '../firebase-config'; // db のみをインポート
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; // Firestore関数
 
@@ -69,7 +70,7 @@ function SessionCreateForm() {
   };
 
   return (
-    <div>
+    <div className="session-form-container">
       <h1>セッション作成</h1>
       <form onSubmit={handleSubmit}>
         {/* 既存のフォーム要素 (ファイルアップロード欄は削除) */}
@@ -123,7 +124,6 @@ function SessionCreateForm() {
             <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} placeholder="https://zoom.us/j/..." />
           </div>
         )}
-        {/* ★ 削除: ファイルアップロード用の入力フィールドは含めない */}
 
         <button type="submit">セッションを保存</button>
       </form>
