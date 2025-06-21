@@ -9,7 +9,7 @@ import SessionList from './components/SessionList';
 import CreateSession from './components/CreateSession';
 import Profile from './components/Profile';
 import Login from './components/Login';
-
+import AIChatPage from './components/AIChatPage';
 import '../src/styles/App.css'; 
 
 function App() {
@@ -68,6 +68,8 @@ function App() {
         return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':
         return <Profile onNavigate={setCurrentPage} user={user} />;
+      case 'ai-chat':
+        return <AIChatPage />;
       default:
         return <Dashboard onNavigate={setCurrentPage} user={user} />;
     }
