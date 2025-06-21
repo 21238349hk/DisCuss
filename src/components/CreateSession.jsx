@@ -51,7 +51,7 @@ function SessionCreateForm() {
     setIsIssuingUrl(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:5001/api/create-zoom-meeting', {
+      const response = await fetch('https://us-central1-gd-tanyao.cloudfunctions.net/createZoomMeeting', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
