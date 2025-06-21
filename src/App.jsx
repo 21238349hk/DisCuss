@@ -17,7 +17,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [userProfile, setUserProfile] = useState(null); // これが抜けていた場合、追加してください
+  const [userProfile, setUserProfile] = useState(null); 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -60,8 +60,10 @@ function App() {
           <SessionList
             onNavigate={setCurrentPage}
             searchQuery={searchQuery}
+            currentUser={user}
           />
         );
+
       case 'create':
         return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':
