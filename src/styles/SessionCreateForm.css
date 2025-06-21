@@ -1,99 +1,272 @@
-/* 既存のCSS */
+
 .session-form-container {
   max-width: 1000px;
   margin: 3rem auto;
   padding: 2rem;
-  /* background-color: white; */
   border-radius: 0.75rem;
-  /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   animation: slideInTop 0.5s ease-out;
 }
 
 .session-form-container h1 {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
   color: #1f2937;
-  margin-bottom: 1rem;
-  text-align: left;
-}
-
-.session-form-container .form-description {
-  font-size: 0.95rem;
-  color: #6b7280;
-  margin-bottom: 2rem;
-  text-align: left;
-}
-
-.session-form-container .form-section {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.session-form-container .section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.session-form-container form > div {
-  margin-bottom: 1rem;
-}
-
-.session-form-container label {
+form label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 1rem;
+  font-weight: 500;
   color: #374151;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.session-form-container input,
-.session-form-container select,
-.session-form-container textarea {
+form input,
+form select,
+form textarea {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   background-color: #f9fafb;
+  margin-bottom: 1.5rem;
 }
 
-.session-form-container button[type="submit"] {
-  margin-top: 1.5rem;
-  background-color: black;
-  color: white;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.session-form-container button[type="submit"]:hover {
-  background-color: white;
-  color: black;
-}
-
-.session-form-container .form-row {
+.step-indicator {
   display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+  position: relative;
+}
+
+.step-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #e5e7eb;
+  z-index: 0;
+}
+
+.step {
+  position: relative;
+  z-index: 1;
+  background-color: white;
+  border: 3px solid #e5e7eb;
+  color: #6b7280;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  line-height: 44px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.step.active {
+  background-color: #1f2937;
+  color: white;
+  border-color: #1f2937;
+  transform: scale(1.05);
+}
+
+.step.completed {
+  background-color: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.step-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.step-buttons button {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+  background-color: #1f2937;
+  color: white;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.step-buttons button:hover {
+  background-color: #374151;
+  transform: translateY(-1px);
+}
+
+.step-buttons button:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.confirmation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirmation-modal-content {
+  background: #ffffff;
+  padding: 2rem 2.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  width: 95%;
+  max-width: 600px;
+  animation: modalFadeIn 0.3s ease-out;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.confirmation-modal-content h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1.8rem;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+.confirmation-details {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem 1.5rem;
+  font-size: 1rem;
+  padding: 1.5rem;
+  background-color: #f9fafb;
+  border-radius: 0.75rem;
+  border: 1px dashed #cbd5e1;
+  margin-bottom: 2rem;
+}
+
+.confirmation-details p {
+  margin: 0;
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.confirmation-details span.label {
+  font-weight: bold;
+  color: #374151;
+}
+
+.confirmation-buttons {
+  display: flex;
+  justify-content: center;
   gap: 1.5rem;
 }
 
-.session-form-container .form-row > div {
-  flex: 1;
-  margin-bottom: 1rem;
+.confirmation-buttons button {
+  padding: 0.75rem 2.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
+
+.confirmation-buttons button.confirm-button {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.confirmation-buttons button.confirm-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.confirmation-buttons button.cancel-button {
+  background-color: #f87171;
+  color: white;
+}
+
+.confirmation-buttons button.cancel-button:hover {
+  background-color: #ef4444;
+  transform: translateY(-1px);
+}
+
+button.confirm-button:disabled::after {
+  content: "";
+  margin-left: 10px;
+  border: 2px solid #fff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  animation: spin 0.6s linear infinite;
+}
+
+
+.checkmark-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.checkmark-container {
+  animation: scaleUp 0.6s ease-out forwards;
+}
+
+.checkmark {
+  width: 80px;
+  height: 80px;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: drawCheck 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 
 @keyframes slideInTop {
   from {
@@ -106,95 +279,6 @@
   }
 }
 
-/* ★ 確認モーダルのCSS */
-.confirmation-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; /* 他の要素より手前に表示 */
-}
-
-.confirmation-modal-content {
-  background: white;
-  padding: 2rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  width: 90%;
-  max-width: 500px;
-  animation: modalFadeIn 0.3s ease-out;
-}
-
-.confirmation-modal-content h2 {
-  font-size: 1.5rem;
-  color: #1f2937;
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.confirmation-modal-content p {
-  font-size: 0.95rem;
-  color: #374151;
-  margin-bottom: 0.8rem;
-  line-height: 1.5;
-}
-
-.confirmation-details p strong {
-    color: #1f2937;
-    margin-right: 0.5rem;
-}
-
-.confirmation-details {
-  border: 1px dashed #d1d5db;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  margin-bottom: 1.5rem;
-  background-color: #f9fafb;
-}
-
-.confirmation-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.confirmation-buttons button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.1s;
-}
-
-.confirmation-buttons button.confirm-button {
-  background-color: #28a745; /* 緑色 */
-  color: white;
-}
-
-.confirmation-buttons button.confirm-button:hover {
-  background-color: #218838;
-  transform: translateY(-1px);
-}
-
-.confirmation-buttons button.cancel-button {
-  background-color: #dc3545; /* 赤色 */
-  color: white;
-}
-
-.confirmation-buttons button.cancel-button:hover {
-  background-color: #c82333;
-  transform: translateY(-1px);
-}
-
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -204,24 +288,4 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.login-status-warning {
-  text-align: center;
-  margin-bottom: 1rem;
-  color: #dc3545; /* 赤色 */
-  font-weight: bold;
-}
-
-button[type="submit"]:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-
-.zoomIssueButton{
-  color: blue;
-}
-
-.button-zoom{
-  color: blue;
 }

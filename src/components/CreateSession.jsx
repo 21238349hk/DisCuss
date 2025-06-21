@@ -7,25 +7,20 @@ import {
 import { onAuthStateChanged } from 'firebase/auth';
 import '../styles/SessionCreateForm.css';
 
-function SessionCreateForm() {
+function SessionCreateForm({ onNavigate }) {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    discussion_theme: '',
-    difficulty: '',
-    session_date: '',
-    start_time: '',
-    duration_minutes: 40,
-    max_participants: 6,
-    meeting_method: 'オンライン',
-    zoom_link: '',
+    title: '', description: '', discussion_theme: '', difficulty: '',
+    session_date: '', start_time: '', duration_minutes: 40, max_participants: 6,
+    meeting_method: 'オンライン', zoom_link: ''
   });
-
+  const [step, setStep] = useState(1);
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [user, setUser] = useState(null);
   const [isIssuingUrl, setIsIssuingUrl] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessCheck, setShowSuccessCheck] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -36,10 +31,7 @@ function SessionCreateForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
   const handleIssueZoomUrl = async () => {
@@ -51,212 +43,164 @@ function SessionCreateForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: formData.title || '新しいセッション' }),
       });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Zoom URLの発行に失敗しました。');
-      }
-
+      if (!response.ok) throw new Error((await response.json()).error || 'Zoom URLの発行に失敗しました。');
       const data = await response.json();
-      setFormData(prevData => ({
-        ...prevData,
-        zoom_link: data.join_url
-      }));
+      setFormData(prevData => ({ ...prevData, zoom_link: data.join_url }));
     } catch (err) {
       setError(err.message);
-      console.error(err);
     } finally {
       setIsIssuingUrl(false);
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setMessage('');
-    setError(null);
-
-    if (!user) {
-      setError("セッションを作成するにはログインが必要です。");
-      return;
-    }
-
+    if (!user) return setError('セッションを作成するにはログインが必要です。');
     setShowConfirmation(true);
   };
 
   const handleConfirm = async () => {
-    setMessage('');
-    setError(null);
-    setShowConfirmation(false);
-
-    if (!user) {
-      setError("セッションを作成するにはログインが必要です。");
-      return;
-    }
-
+    setIsSubmitting(true);
     try {
-      const sessionsCollectionRef = collection(db, 'sessions');
-
-      const sessionDataToSave = {
-        title: formData.title,
-        description: formData.description,
-        discussion_theme: formData.discussion_theme,
-        difficulty: formData.difficulty,
+      const docRef = await addDoc(collection(db, 'sessions'), {
+        ...formData,
         session_datetime: new Date(`${formData.session_date}T${formData.start_time}`),
-        duration_minutes: Number(formData.duration_minutes),
-        max_participants: Number(formData.max_participants),
-        meeting_method: formData.meeting_method,
         zoom_link: formData.meeting_method === 'オンライン' ? formData.zoom_link : null,
         createdBy: user.uid,
         createdByName: user.displayName || user.email,
         userEmail: user.email,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      };
-
-      const docRef = await addDoc(sessionsCollectionRef, sessionDataToSave);
-
-      // 🔽 プロフィールの「作成セッション数」を+1更新
+      });
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
-
       if (userDocSnap.exists()) {
-        const currentData = userDocSnap.data();
-        const prevCreated = currentData?.stats?.createdSessions || 0;
-
-        await updateDoc(userDocRef, {
-          'stats.createdSessions': prevCreated + 1
-        });
+        const prev = userDocSnap.data()?.stats?.createdSessions || 0;
+        await updateDoc(userDocRef, { 'stats.createdSessions': prev + 1 });
       }
-
-      setMessage(`セッションが正常に作成されました。ドキュメントID: ${docRef.id}`);
+      setMessage(`セッションが作成されました。ID: ${docRef.id}`);
       setFormData({
         title: '', description: '', discussion_theme: '', difficulty: '',
         session_date: '', start_time: '', duration_minutes: 40, max_participants: 6,
-        meeting_method: 'オンライン', zoom_link: '',
+        meeting_method: 'オンライン', zoom_link: ''
       });
 
+      setShowSuccessCheck(true);
+        setTimeout(() => {
+          setShowSuccessCheck(false);
+          onNavigate('dashboard');
+      }, 1500);  
+
     } catch (err) {
-      console.error("セッションの保存中にエラーが発生しました:", err);
-      setError(`セッションの保存に失敗しました: ${err.message}`);
+      setError(`保存に失敗しました: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
+      setShowConfirmation(false);
     }
   };
 
-  const handleCancel = () => {
-    setShowConfirmation(false);
-    setMessage('');
-    setError(null);
-  };
+  const steps = [
+    <>
+      <label>セッションタイトル</label>
+      <input type="text" name="title" value={formData.title} onChange={handleChange} required />
+      <label>セッション説明</label>
+      <textarea name="description" value={formData.description} onChange={handleChange} required rows="5" />
+    </>,
+    <>
+      <label>ディスカッションテーマ</label>
+      <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required />
+      <label>難易度</label>
+      <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
+        <option value="">選択してください</option>
+        <option value="初級">初級</option>
+        <option value="中級">中級</option>
+        <option value="上級">上級</option>
+      </select>
+    </>,
+    <>
+      <label>開催日</label>
+      <input type="date" name="session_date" value={formData.session_date} onChange={handleChange} required />
+      <label>開始時間</label>
+      <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
+    </>,
+    <>
+      <label>所要時間 (分)</label>
+      <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} min={5} max={40} required />
+      <label>最大参加者数</label>
+      <input type="number" name="max_participants" value={formData.max_participants} onChange={handleChange} required />
+    </>,
+    <>
+      <label>開催方式</label>
+      <select name="meeting_method" value={formData.meeting_method} onChange={handleChange}>
+        <option value="オンライン">オンライン</option>
+        <option value="対面">対面</option>
+      </select>
+      {formData.meeting_method === 'オンライン' && (
+        <>
+          <label>Zoom招待リンク:</label>
+          <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} />
+          <button type="button" onClick={handleIssueZoomUrl} disabled={isIssuingUrl}>
+            {isIssuingUrl ? '発行中...' : 'Zoom URLを即時発行'}
+          </button>
+        </>
+      )}
+    </>
+  ];
 
   return (
     <div className="session-form-container">
       <h1>新しいGDセッションを作成</h1>
-      <p className="form-description">他の就活生と一緒に学べるセッションを企画しましょう</p>
-
-      <div className="form-section">
-        <h2 className="section-title">基本情報</h2>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>セッションタイトル</label>
-            <input type="text" name="title" value={formData.title} onChange={handleChange} required />
-          </div>
-          <div>
-            <label>セッション説明</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} required rows="5" />
-          </div>
-          <div>
-            <label>ディスカッションテーマ</label>
-            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required />
-          </div>
-          <div className="form-row">
-            <div>
-              <label>難易度</label>
-              <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
-                <option value="">選択してください</option>
-                <option value="初級">初級</option>
-                <option value="中級">中級</option>
-                <option value="上級">上級</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label>開催日</label>
-            <input type="date" name="session_date" value={formData.session_date} onChange={handleChange} required />
-          </div>
-          <div>
-            <label>開始時間</label>
-            <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
-          </div>
-          <div>
-            <label>所要時間 (分)</label>
-            <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} min={5} max={40} required />
-          </div>
-          <div>
-            <label>最大参加者数</label>
-            <input type="number" name="max_participants" value={formData.max_participants} onChange={handleChange} required />
-          </div>
-          <div>
-            <label>開催方式</label>
-            <select name="meeting_method" value={formData.meeting_method} onChange={handleChange}>
-              <option value="オンライン">オンライン</option>
-              <option value="対面">対面</option>
-            </select>
-          </div>
-
-          {formData.meeting_method === 'オンライン' && (
-            <div>
-              <label>Zoom招待リンク:</label>
-              <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} />
-              <button
-                type="button"
-                onClick={handleIssueZoomUrl}
-                disabled={isIssuingUrl}
-                style={{
-                  marginTop: '8px',
-                  backgroundColor: 'black',
-                  color: 'white',
-                  padding: '8px 3px',
-                  border: 'none',
-                  borderRadius: '4px'
-                }}
-              >
-                {isIssuingUrl ? '発行中...' : 'Zoom URLを即時発行'}
-              </button>
-            </div>
-          )}
-
-          <button type="submit" disabled={!user}>内容を確認して作成</button>
-        </form>
+      <div className="step-indicator">
+        {[1, 2, 3, 4, 5].map(s => (
+          <div key={s} className={`step ${step === s ? 'active' : ''}`}>Step {s}</div>
+        ))}
       </div>
-
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
+      <form onSubmit={handleSubmit}>
+        {steps[step - 1]}
+        <div className="step-buttons">
+          {step > 1 && <button type="button" onClick={() => setStep(step - 1)}>戻る</button>}
+          {step < 5 && <button type="button" onClick={() => setStep(step + 1)}>次へ</button>}
+          {step === 5 && <button type="submit">確認画面へ</button>}
+        </div>
+      </form>
       {showConfirmation && (
         <div className="confirmation-modal-overlay">
           <div className="confirmation-modal-content">
             <h2>入力内容の確認</h2>
-            <p>以下の内容でセッションを作成します。よろしいですか？</p>
             <div className="confirmation-details">
-              <p><strong>セッションタイトル:</strong> {formData.title}</p>
-              <p><strong>セッション説明:</strong> {formData.description}</p>
-              <p><strong>ディスカッションテーマ:</strong> {formData.discussion_theme || 'N/A'}</p>
-              <p><strong>難易度:</strong> {formData.difficulty || 'N/A'}</p>
-              <p><strong>開催日:</strong> {formData.session_date}</p>
-              <p><strong>開始時間:</strong> {formData.start_time}</p>
-              <p><strong>所要時間:</strong> {formData.duration_minutes}分</p>
-              <p><strong>最大参加者数:</strong> {formData.max_participants}人</p>
-              <p><strong>開催方式:</strong> {formData.meeting_method}</p>
-              {formData.meeting_method === 'オンライン' && formData.zoom_link && (
-                <p><strong>Zoom招待リンク:</strong> {formData.zoom_link}</p>
-              )}
+              <p><strong>タイトル:</strong> {formData.title}</p>
+              <p><strong>説明:</strong> {formData.description}</p>
+              <p><strong>テーマ:</strong> {formData.discussion_theme}</p>
+              <p><strong>難易度:</strong> {formData.difficulty}</p>
+              <p><strong>日付:</strong> {formData.session_date}</p>
+              <p><strong>時間:</strong> {formData.start_time}</p>
+              <p><strong>時間:</strong> {formData.duration_minutes}分</p>
+              <p><strong>人数:</strong> {formData.max_participants}人</p>
+              <p><strong>方式:</strong> {formData.meeting_method}</p>
+              {formData.zoom_link && <p><strong>Zoomリンク:</strong> {formData.zoom_link}</p>}
             </div>
             <div className="confirmation-buttons">
-              <button onClick={handleConfirm} className="confirm-button">決定</button>
-              <button onClick={handleCancel} className="cancel-button">やり直す</button>
+              <button onClick={handleConfirm} disabled={isSubmitting} className="confirm-button">
+                {isSubmitting ? '投稿中...' : '投稿'}
+              </button>
+              <button onClick={() => setShowConfirmation(false)} className="cancel-button">キャンセル</button>
             </div>
           </div>
         </div>
       )}
+      {message && <p style={{ color: 'green' }}>{message}</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {showSuccessCheck && (
+        <div className="checkmark-overlay">
+          <div className="checkmark-container">
+            <svg className="checkmark" viewBox="0 0 52 52">
+              <path d="M14 27 l10 10 l20 -20" fill="none" stroke="#22c55e" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
