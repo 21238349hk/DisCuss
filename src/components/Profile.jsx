@@ -15,6 +15,14 @@ export default function Profile({ onNavigate, user }) {
   });
   const [loading, setLoading] = useState(true);
 
+  const [selectedIndustry, setSelectedIndustry] = useState('');
+
+  // 🔽 ここに追加！
+  const industryOptions = [
+    "メーカー", "商社", "小売", "金融", "サービス",
+    "IT", "マスコミ", "官公庁・公社・団体", "その他"
+  ];
+
   useEffect(() => {
     if (!user) return;
     const fetchProfile = async () => {
@@ -213,12 +221,20 @@ export default function Profile({ onNavigate, user }) {
             ))}
           </div>
 
-          <div className="profile-card">
-            <h3>志望業界</h3>
-            {profile.targetIndustries.map(ind => (
-              <span key={ind} className="industry-tag">{ind}</span>
-            ))}
-          </div>
+    <div className="profile-card">
+      <h3>志望業界（選択式）</h3>
+      <select
+        value={selectedIndustry}
+        onChange={(e) => setSelectedIndustry(e.target.value)}
+      >
+    <option value="">選択してください</option>
+    {industryOptions.map((industry) => (
+      <option key={industry} value={industry}>
+        {industry}
+      </option>
+    ))}
+  </select>
+</div>
 
           <div className="profile-card">
             <h3>達成バッジ</h3>
