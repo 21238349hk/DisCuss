@@ -51,8 +51,8 @@ function SessionList({ currentUser }) {
     setShowModal(true);
   };
 
-  const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type, sessionId) => {
-    const approvalUrl = `https://gd-tanyao.web.app`;
+  const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type, sessionId, requesterId) => {
+    const approvalUrl = `https://gd-tanyao.web.app/approval?sessionId=${sessionId}&requesterId=${requesterId}`;
 
     return emailjs.send(
       'service_a9mr7c2',
@@ -89,9 +89,9 @@ function SessionList({ currentUser }) {
         selectedSession.title,
         currentUser.email || 'anonymous@example.com',
         requestType,
-        selectedSession.id
+        selectedSession.id,
+        currentUser.uid || 'anonymous'
       );
-      console.log(" selectedSession.userEmail:", selectedSession.userEmail);
 
       alert(`${requestType}申請を送信しました。`);
     } catch (err) {

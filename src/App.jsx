@@ -10,14 +10,17 @@ import CreateSession from './components/CreateSession';
 import Profile from './components/Profile';
 import Login from './components/Login';
 import AIChatPage from './components/AIChatPage';
-import '../src/styles/App.css'; 
+import ApprovalPage from './components/ApprovalPage';
+import { useLocation } from 'react-router-dom';
+import '../src/styles/App.css';
 
 function App() {
+  const location = useLocation();
   const [currentPage, setCurrentPage] = useState('login');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [userProfile, setUserProfile] = useState(null); 
+  const [userProfile, setUserProfile] = useState(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -43,6 +46,11 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  // URLパスに approval が含まれていたら専用ページを表示
+  if (location.pathname.startsWith('/approval')) {
+    return <ApprovalPage />;
+  }
+
   const renderCurrentPage = () => {
     if (loading) {
       return <div className="flex justify-center items-center h-screen">Loading...</div>;
@@ -63,7 +71,6 @@ function App() {
             currentUser={user}
           />
         );
-
       case 'create':
         return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':
