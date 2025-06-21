@@ -7,7 +7,9 @@ import {
   query,
   orderBy,
   onSnapshot,
-  addDoc
+  addDoc,
+  getDocs,
+  where
 } from 'firebase/firestore';
 
 function SessionList({ currentUser }) {
@@ -18,6 +20,7 @@ function SessionList({ currentUser }) {
   const [requestType, setRequestType] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedRequests, setSubmittedRequests] = useState({});
 
   useEffect(() => {
     const q = query(collection(db, 'sessions'), orderBy('session_datetime', 'asc'));
@@ -44,6 +47,25 @@ function SessionList({ currentUser }) {
 
     return () => unsubscribe();
   }, []);
+
+  const fetchSubmittedRequests = async () => {
+    if (!currentUser) return;
+    const notifQuery = query(
+      collection(db, 'notifications'),
+      where('requesterId', '==', currentUser.uid)
+    );
+    const notifSnapshot = await getDocs(notifQuery);
+    const requestsMap = {};
+    notifSnapshot.forEach((doc) => {
+      const data = doc.data();
+      requestsMap[data.sessionId] = data.type; // "参加" or "見学"
+    });
+    setSubmittedRequests(requestsMap);
+  };
+
+  useEffect(() => {
+    fetchSubmittedRequests();
+  }, [currentUser]);
 
   const openModal = (session, type) => {
     setSelectedSession(session);
@@ -93,6 +115,7 @@ function SessionList({ currentUser }) {
         currentUser.uid || 'anonymous'
       );
 
+      await fetchSubmittedRequests();
       alert(`${requestType}申請を送信しました。`);
     } catch (err) {
       console.error('通知送信エラー:', err);
@@ -115,34 +138,50 @@ function SessionList({ currentUser }) {
         <p>まだセッションがありません。</p>
       ) : (
         <ul className="session-list">
-          {sessions.map((session) => (
-            <li key={session.id} className="session-item float-animate">
-              <div className="session-content">
-                <h2>{session.title}</h2>
-                <p><strong>説明:</strong> {session.description}</p>
-                <p><strong>ディスカッションテーマ:</strong> {session.discussion_theme || 'N/A'}</p>
-                <p><strong>難易度:</strong> {session.difficulty || 'N/A'}</p>
-                <p><strong>開催日:</strong> {session.session_date}</p>
-                <p><strong>開始時間:</strong> {session.start_time}</p>
-                <p><strong>所要時間:</strong> {session.duration_minutes}分</p>
-                <p><strong>最大参加者数:</strong> {session.max_participants}人</p>
-                <p><strong>開催方式:</strong> {session.meeting_method}</p>
-              </div>
+          {sessions.map((session) => {
+            const requestStatus = submittedRequests[session.id];
+            return (
+              <li key={session.id} className="session-item float-animate">
+                <div className="session-content">
+                  <h2>{session.title}</h2>
+                  <p><strong>説明:</strong> {session.description}</p>
+                  <p><strong>ディスカッションテーマ:</strong> {session.discussion_theme || 'N/A'}</p>
+                  <p><strong>難易度:</strong> {session.difficulty || 'N/A'}</p>
+                  <p><strong>開催日:</strong> {session.session_date}</p>
+                  <p><strong>開始時間:</strong> {session.start_time}</p>
+                  <p><strong>所要時間:</strong> {session.duration_minutes}分</p>
+                  <p><strong>最大参加者数:</strong> {session.max_participants}人</p>
+                  <p><strong>開催方式:</strong> {session.meeting_method}</p>
+                </div>
 
-              <div className="session-actions">
-                <button className="request-button join" onClick={() => openModal(session, '参加')}>
-                  参加申請
-                </button>
-                <button className="request-button observe" onClick={() => openModal(session, '見学')}>
-                  見学申請
-                </button>
-              </div>
+                <div className="session-actions">
+                  {requestStatus ? (
+                    <>
+                      <button className="request-button joined" disabled>
+                        {requestStatus}申請済み
+                      </button>
+                      {/* <button className="request-button cancel" disabled>
+                        キャンセル予定
+                      </button> */}
+                    </>
+                  ) : (
+                    <>
+                      <button className="request-button join" onClick={() => openModal(session, '参加')}>
+                        参加申請
+                      </button>
+                      <button className="request-button observe" onClick={() => openModal(session, '見学')}>
+                        見学申請
+                      </button>
+                    </>
+                  )}
+                </div>
 
-              <div className="session-meta-container">
-                <p className="session-meta">作成日時: {session.createdAt} | 更新日時: {session.updatedAt}</p>
-              </div>
-            </li>
-          ))}
+                <div className="session-meta-container">
+                  <p className="session-meta">作成日時: {session.createdAt} | 更新日時: {session.updatedAt}</p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 
