@@ -1,8 +1,7 @@
-// frontend/src/components/SessionList.js
-//丸ごと変更　幹太
 import React, { useState, useEffect } from 'react';
-import { db } from '../firebase-config'; // db のみをインポート
-import { collection, query, orderBy, getDocs, onSnapshot } from 'firebase/firestore'; // Firestore関数
+import { db } from '../firebase-config';
+import '../styles/SessionList.css';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 
 function SessionList() {
   const [sessions, setSessions] = useState([]);
@@ -13,21 +12,18 @@ function SessionList() {
     const sessionsCollectionRef = collection(db, 'sessions');
     const q = query(sessionsCollectionRef, orderBy('session_datetime', 'asc'));
 
-    // リアルタイムリスナーを使用してデータの変更を自動的に反映
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const sessionsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        // FirestoreのTimestampオブジェクトをJavaScriptのDateオブジェクトに変換
         const sessionDateTime = data.session_datetime ? data.session_datetime.toDate() : null;
         const createdAt = data.createdAt ? data.createdAt.toDate() : null;
         const updatedAt = data.updatedAt ? data.updatedAt.toDate() : null;
 
         return {
-          id: doc.id, // ドキュメントID
+          id: doc.id,
           ...data,
-          // 表示用に日付と時刻を分離してISO文字列に変換
           session_date: sessionDateTime ? sessionDateTime.toISOString().split('T')[0] : null,
-          start_time: sessionDateTime ? sessionDateTime.toTimeString().split(' ')[0].substring(0, 5) : null, // HH:MM
+          start_time: sessionDateTime ? sessionDateTime.toTimeString().split(' ')[0].substring(0, 5) : null,
           createdAt: createdAt ? createdAt.toISOString() : null,
           updatedAt: updatedAt ? updatedAt.toISOString() : null,
         };
@@ -40,7 +36,6 @@ function SessionList() {
       setLoading(false);
     });
 
-    // コンポーネントのアンマウント時にリスナーを解除するクリーンアップ関数
     return () => unsubscribe();
   }, []);
 
@@ -53,14 +48,14 @@ function SessionList() {
   }
 
   return (
-    <div>
+    <div className="session-container">
       <h1>セッション一覧</h1>
       {sessions.length === 0 ? (
         <p>まだセッションがありません。</p>
       ) : (
-        <ul>
+        <ul className="session-list">
           {sessions.map((session) => (
-            <li key={session.id} style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '10px' }}>
+            <li key={session.id} className="session-item">
               <h2>{session.title}</h2>
               <p><strong>説明:</strong> {session.description}</p>
               <p><strong>ディスカッションテーマ:</strong> {session.discussion_theme || 'N/A'}</p>
@@ -73,9 +68,8 @@ function SessionList() {
               {session.meeting_method === 'オンライン' && session.zoom_link && (
                 <p><strong>Zoomリンク:</strong> <a href={session.zoom_link} target="_blank" rel="noopener noreferrer">{session.zoom_link}</a></p>
               )}
-              {/* ★ 削除: ファイルURLの表示は行わない */}
               {session.createdAt && session.updatedAt && (
-                <p style={{fontSize: '0.8em', color: '#666'}}>
+                <p className="session-meta">
                   作成日時: {new Date(session.createdAt).toLocaleString()} |
                   更新日時: {new Date(session.updatedAt).toLocaleString()}
                 </p>
