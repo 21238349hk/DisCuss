@@ -9,29 +9,14 @@ import {
   Video
 } from 'lucide-react';
 import { getDocs, collection } from 'firebase/firestore';
-import { db } from '../firebase';
-import { mockSessions, currentUser } from '../data/mockData';
+import { db } from '../firebase-config';
 import '../styles/Dashboard.css';
 
-<<<<<<< Updated upstream
 export default function Dashboard({ onNavigate, user }) {
   const [stats, setStats] = useState([
     { label: '参加セッション数', value: '-', icon: Users, color: 'bg-blue-500' },
     { label: '今月の参加回数', value: '-', icon: Calendar, color: 'bg-green-500' },
     { label: '平均評価スコア', value: '-', icon: Trophy, color: 'bg-yellow-500' },
-=======
-export default function Dashboard({ onNavigate }) {
-  const upcomingSessions = mockSessions.filter(
-    session =>
-      session.participants.some(p => p.id === currentUser.id) &&
-      new Date(session.scheduledAt) > new Date()
-  );
-
-  const stats = [
-    { label: '参加セッション数', value: '12', icon: Users, color: 'bg-blue-500' },
-    { label: '今月の参加回数', value: '4', icon: Calendar, color: 'bg-green-500' },
-    { label: '平均評価スコア', value: '4.2', icon: Trophy, color: 'bg-yellow-500' },
->>>>>>> Stashed changes
     { label: '成長率', value: '+15%', icon: TrendingUp, color: 'bg-purple-500' }
   ]);
 
@@ -55,16 +40,17 @@ export default function Dashboard({ onNavigate }) {
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          const start = new Date(data.scheduledAt?.seconds ? data.scheduledAt.toDate() : data.scheduledAt);
+          const start = data.session_datetime?.toDate();
+          if (!start) return;
 
           const isFuture = start > now;
-          const isJoined = data.participants?.includes(user.uid);
+          const isJoined = Array.isArray(data.participants) && data.participants.includes(user.uid);
 
           if (isJoined) {
             joined++;
             if (start.getMonth() + 1 === currentMonth) thisMonth++;
             if (isFuture) upcoming.push({ ...data, id: doc.id });
-          } else if (data.status === 'recruiting') {
+          } else if (data.status === 'recruiting' && isFuture) {
             recommended.push({ ...data, id: doc.id });
           }
 
@@ -77,8 +63,8 @@ export default function Dashboard({ onNavigate }) {
           : '-';
 
         setStats([
-          { label: '参加セッション数', value: joined === 0 ? '-' : String(joined), icon: Users, color: 'bg-blue-500' },
-          { label: '今月の参加回数', value: thisMonth === 0 ? '-' : String(thisMonth), icon: Calendar, color: 'bg-green-500' },
+          { label: '参加セッション数', value: String(joined), icon: Users, color: 'bg-blue-500' },
+          { label: '今月の参加回数', value: String(thisMonth), icon: Calendar, color: 'bg-green-500' },
           { label: '平均評価スコア', value: avgScore, icon: Trophy, color: 'bg-yellow-500' },
           { label: '成長率', value: '+15%', icon: TrendingUp, color: 'bg-purple-500' }
         ]);
@@ -97,7 +83,7 @@ export default function Dashboard({ onNavigate }) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="dashboard-header">
         <h1 className="dashboard-title">
-          おかえりなさい、{currentUser.name}さん
+          おかえりなさい、{user ? user.displayName : 'ゲスト'}さん
         </h1>
         <p className="dashboard-subtitle">
           今日も就活スキルを磨いていきましょう！
@@ -153,10 +139,10 @@ export default function Dashboard({ onNavigate }) {
                       </span>
                     </div>
                     <div className="session-item-info">
-                      <div><Calendar className="icon-small" />{new Date(session.scheduledAt).toLocaleDateString('ja-JP')}</div>
-                      <div><Clock className="icon-small" />{session.duration}分</div>
+                      <div><Calendar className="icon-small" />{session.session_datetime?.toDate().toLocaleDateString('ja-JP')}</div>
+                      <div><Clock className="icon-small" />{session.duration_minutes}分</div>
                       <div>
-                        {session.location === 'online' ? (
+                        {session.meeting_method === 'オンライン' ? (
                           <><Video className="icon-small" />オンライン</>
                         ) : (
                           <><MapPin className="icon-small" />オフライン</>
@@ -190,25 +176,26 @@ export default function Dashboard({ onNavigate }) {
                   key={session.id}
                   className="session-item clickable animate-slide-up"
                   style={{ animationDelay: `${index * 0.1 + 0.5}s` }}
+                  onClick={() => onNavigate('session-detail', { sessionId: session.id })}
                 >
                   <div className="session-item-header">
                     <h3 className="session-title">{session.title}</h3>
                     <span className="participant-count">
-                      {session.currentParticipants}/{session.maxParticipants}人
+                      {session.participants?.length || 0}/{session.max_participants}人
                     </span>
                   </div>
                   <p className="session-description">{session.description}</p>
                   <div className="session-tags">
-                    {session.tags.map(tag => (
+                    {Array.isArray(session.tags) && session.tags.map(tag => (
                       <span key={tag} className="tag">{tag}</span>
                     ))}
                   </div>
                   <div className="session-footer">
                     <div className="session-date">
                       <Calendar className="icon-small" />
-                      {new Date(session.scheduledAt).toLocaleDateString('ja-JP')}
+                      {session.session_datetime?.toDate().toLocaleDateString('ja-JP')}
                     </div>
-                    <button className="button-secondary">参加する</button>
+                    <button className="button-secondary">詳細を見る</button>
                   </div>
                 </div>
               ))}
@@ -216,7 +203,6 @@ export default function Dashboard({ onNavigate }) {
           </div>
         </div>
       </div>
-
 
       {/* Quick Action */}
       <div
