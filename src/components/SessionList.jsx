@@ -81,6 +81,7 @@ function SessionList({ currentUser }) {
         requesterId: currentUser.uid || 'anonymous',
         requesterEmail: currentUser.email || 'anonymous@example.com',
         status: 'pending',
+        userEmail: selectedSession.userEmail
       });
 
       await sendEmailToOwner(

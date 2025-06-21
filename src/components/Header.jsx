@@ -23,17 +23,21 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
 
     const q = query(
       collection(db, 'notifications'),
-      where('to', '==', user.email) 
+      where('userEmail', '==', user.email)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      console.log("🔔 通知取得:", notifs); 
+      
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.read).length);
     });
 
     return () => unsubscribe();
   }, [user]);
+
 
 
   return (
