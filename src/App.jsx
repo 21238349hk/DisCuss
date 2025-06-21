@@ -16,6 +16,8 @@ function App() {
   const [currentPage, setCurrentPage] = useState('login');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [userProfile, setUserProfile] = useState(null); 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -25,6 +27,7 @@ function App() {
         const docSnap = await getDoc(userDocRef);
 
         if (docSnap.exists()) {
+          setUserProfile(docSnap.data());
           setCurrentPage('dashboard');
         } else {
           console.log("プロフィールが見つかりません。作成ページに移動します。");
@@ -32,6 +35,7 @@ function App() {
         }
       } else {
         setUser(null);
+        setUserProfile(null);
         setCurrentPage('login');
       }
       setLoading(false);
@@ -52,8 +56,12 @@ function App() {
       case 'dashboard':
         return <Dashboard onNavigate={setCurrentPage} user={user} />;
       case 'sessions':
-        return <SessionList onNavigate={setCurrentPage} user={user} />;
-
+        return (
+          <SessionList
+            onNavigate={setCurrentPage}
+            searchQuery={searchQuery}
+          />
+        );
       case 'create':
         return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':
@@ -65,7 +73,16 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {user && <Header currentPage={currentPage} onNavigate={setCurrentPage} />}
+      {user && (
+        <Header
+          currentPage={currentPage}
+          onNavigate={setCurrentPage}
+          user={user}
+          userProfile={userProfile}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+        />
+      )}
       <main>
         {renderCurrentPage()}
       </main>

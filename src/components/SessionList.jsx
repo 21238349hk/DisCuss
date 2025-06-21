@@ -10,7 +10,7 @@ import {
   addDoc
 } from 'firebase/firestore';
 
-function SessionList({ currentUser }) {
+function SessionList({ searchQuery, currentUser }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -107,14 +107,19 @@ function SessionList({ currentUser }) {
   if (loading) return <p>セッションを読み込み中...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
+  const filteredSessions = sessions.filter((session) =>
+    session.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="session-container">
       <h1>セッション一覧</h1>
-      {sessions.length === 0 ? (
-        <p>まだセッションがありません。</p>
+
+      {filteredSessions.length === 0 ? (
+        <p>該当するセッションがありません。</p>
       ) : (
         <ul className="session-list">
-          {sessions.map((session) => (
+          {filteredSessions.map((session) => (
             <li key={session.id} className="session-item float-animate">
               <div className="session-content">
                 <h2>{session.title}</h2>
