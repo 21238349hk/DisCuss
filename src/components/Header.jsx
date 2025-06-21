@@ -4,7 +4,7 @@ import { Bell, Search, User, Menu, X } from 'lucide-react';
 import { currentUser, mockNotifications } from '../data/mockData';
 import '../styles/Header.css';
 
-export default function Header({ currentPage, onNavigate }) {
+export default function Header({ currentPage, onNavigate, userProfile }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const unreadCount = mockNotifications.filter(n => !n.read).length;
@@ -78,8 +78,16 @@ export default function Header({ currentPage, onNavigate }) {
               onClick={() => onNavigate('profile')}
               className="profile-button"
             >
-              <img src={currentUser.avatar} alt={currentUser.name} className="profile-button__avatar" />
-              <span className="profile-button__name">{currentUser.name}</span>
+              {userProfile && userProfile.photoURL ? (
+                <img src={userProfile.photoURL} alt={userProfile.displayName} className="profile-button__avatar" />
+              ) : (
+                <div className="profile-button__avatar-placeholder">
+                  <User size={20} />
+                </div>
+              )}
+              <span className="profile-button__name">
+                {userProfile ? userProfile.displayName : 'プロフィールを登録'}
+              </span>
             </button>
 
           </div>

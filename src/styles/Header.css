@@ -197,14 +197,26 @@
 .profile-button__avatar {
   width: 32px;
   height: 32px;
-  border-radius: 9999px;
+  border-radius: 50%;
   object-fit: cover;
 }
 
+.profile-button__avatar-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #4a5568; /* gray-700 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
 .profile-button__name {
-  font-size: 0.875rem;
-  color: #f1f5f9; 
+  font-size: 0.875rem; /* 14px */
   font-weight: 500;
+  color: var(--text-primary);
+  display: block;
 }
 
 @media (min-width: 640px) {
