@@ -1,8 +1,9 @@
 // frontend/src/components/SessionCreateForm.js
-import React, { useState } from 'react';
-import { db } from '../firebase-config'; // db のみをインポート
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; // Firestore関数
-import '../styles/SessionCreateForm.css'; // CSSファイルをインポート
+import React, { useState, useEffect } from 'react';
+import { db, auth } from '../firebase-config';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import '../styles/SessionCreateForm.css';
 
 function SessionCreateForm() {
   const [formData, setFormData] = useState({
@@ -18,8 +19,20 @@ function SessionCreateForm() {
     zoom_link: '',
   });
   const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [showConfirmation, setShowConfirmation] = useState(false); // 確認モーダル表示のstate
+  const [error, setError] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,14 +45,25 @@ function SessionCreateForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-    setError('');
-    setShowConfirmation(true); // 確認モーダルを表示
+    setError(null);
+
+    if (!user) {
+      setError("セッションを作成するにはログインが必要です。");
+      return;
+    }
+
+    setShowConfirmation(true);
   };
 
   const handleConfirm = async () => {
     setMessage('');
-    setError('');
-    setShowConfirmation(false); // モーダルを閉じる
+    setError(null);
+    setShowConfirmation(false);
+
+    if (!user) {
+      setError("セッションを作成するにはログインが必要です。");
+      return;
+    }
 
     try {
       const sessionsCollectionRef = collection(db, 'sessions');
@@ -54,13 +78,16 @@ function SessionCreateForm() {
         max_participants: Number(formData.max_participants),
         meeting_method: formData.meeting_method,
         zoom_link: formData.meeting_method === 'オンライン' ? formData.zoom_link : null,
+        createdBy: user.uid,
+        createdByName: user.displayName || user.email,
+        userEmail: user.email, // ★ ここを追加：ユーザーのGmailアドレスを保存
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
       const docRef = await addDoc(sessionsCollectionRef, sessionDataToSave);
       setMessage(`セッションが正常に作成されました。ドキュメントID: ${docRef.id}`);
-      setFormData({ // フォームのリセット
+      setFormData({
         title: '', description: '', discussion_theme: '', difficulty: '',
         session_date: '', start_time: '', duration_minutes: 40, max_participants: 6,
         meeting_method: 'オンライン', zoom_link: '',
@@ -73,15 +100,21 @@ function SessionCreateForm() {
   };
 
   const handleCancel = () => {
-    setShowConfirmation(false); // モーダルを閉じる
-    setMessage(''); // メッセージをクリア
-    setError(''); // エラーをクリア
+    setShowConfirmation(false);
+    setMessage('');
+    setError(null);
   };
 
   return (
     <div className="session-form-container">
       <h1>新しいGDセッションを作成</h1>
       <p className="form-description">他の就活生と一緒に学べるセッションを企画しましょう</p>
+
+      {user ? (
+        <p className="login-status">ログイン中: {user.displayName || user.email}</p>
+      ) : (
+        <p className="login-status-warning">セッションを作成するにはログインが必要です。 (ダッシュボードなどからログインしてください)</p>
+      )}
 
       <div className="form-section">
         <h2 className="section-title">基本情報</h2>
@@ -139,7 +172,7 @@ function SessionCreateForm() {
             </div>
           )}
 
-          <button type="submit">セッションを保存</button>
+          <button type="submit" disabled={!user}>セッションを保存</button>
         </form>
       </div>
 
@@ -164,6 +197,13 @@ function SessionCreateForm() {
               <p><strong>開催方式:</strong> {formData.meeting_method}</p>
               {formData.meeting_method === 'オンライン' && formData.zoom_link && (
                 <p><strong>Zoom招待リンク:</strong> {formData.zoom_link}</p>
+              )}
+              {user && (
+                <>
+                  <p><strong>作成者UID:</strong> {user.uid}</p>
+                  <p><strong>作成者名:</strong> {user.displayName || user.email}</p>
+                  <p><strong>作成者Gmail:</strong> {user.email}</p> {/* ★ ここを確認モーダルにも表示 (任意) */}
+                </>
               )}
             </div>
             <div className="confirmation-buttons">
