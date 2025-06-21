@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Calendar,
   Users,
@@ -8,28 +8,76 @@ import {
   MapPin,
   Video
 } from 'lucide-react';
+import { getDocs, collection } from 'firebase/firestore';
+import { db } from '../firebase';
 import { mockSessions, currentUser } from '../data/mockData';
 import '../styles/Dashboard.css';
 
 export default function Dashboard({ onNavigate, user }) {
-  const upcomingSessions = mockSessions.filter(
-    session =>
-      session.participants.some(p => p.id === currentUser.id) &&
-      new Date(session.scheduledAt) > new Date()
-  );
-
-  const stats = [
-    { label: '参加セッション数', value: '12', icon: Users, color: 'bg-blue-500' },
-    { label: '今月の参加回数', value: '4', icon: Calendar, color: 'bg-green-500' },
-    { label: '平均評価スコア', value: '4.2', icon: Trophy, color: 'bg-yellow-500' },
+  const [stats, setStats] = useState([
+    { label: '参加セッション数', value: '-', icon: Users, color: 'bg-blue-500' },
+    { label: '今月の参加回数', value: '-', icon: Calendar, color: 'bg-green-500' },
+    { label: '平均評価スコア', value: '-', icon: Trophy, color: 'bg-yellow-500' },
     { label: '成長率', value: '+15%', icon: TrendingUp, color: 'bg-purple-500' }
-  ];
+  ]);
 
-  const recommendedSessions = mockSessions.filter(
-    session =>
-      session.status === 'recruiting' &&
-      !session.participants.some(p => p.id === currentUser.id)
-  );
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [recommendedSessions, setRecommendedSessions] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchData = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'sessions'));
+        let joined = 0;
+        let thisMonth = 0;
+        let scores = [];
+        let upcoming = [];
+        let recommended = [];
+
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const start = new Date(data.scheduledAt?.seconds ? data.scheduledAt.toDate() : data.scheduledAt);
+
+          const isFuture = start > now;
+          const isJoined = data.participants?.includes(user.uid);
+
+          if (isJoined) {
+            joined++;
+            if (start.getMonth() + 1 === currentMonth) thisMonth++;
+            if (isFuture) upcoming.push({ ...data, id: doc.id });
+          } else if (data.status === 'recruiting') {
+            recommended.push({ ...data, id: doc.id });
+          }
+
+          const score = data.evaluations?.[user.uid];
+          if (typeof score === 'number') scores.push(score);
+        });
+
+        const avgScore = scores.length
+          ? (scores.reduce((a, b) => a + b) / scores.length).toFixed(1)
+          : '-';
+
+        setStats([
+          { label: '参加セッション数', value: joined === 0 ? '-' : String(joined), icon: Users, color: 'bg-blue-500' },
+          { label: '今月の参加回数', value: thisMonth === 0 ? '-' : String(thisMonth), icon: Calendar, color: 'bg-green-500' },
+          { label: '平均評価スコア', value: avgScore, icon: Trophy, color: 'bg-yellow-500' },
+          { label: '成長率', value: '+15%', icon: TrendingUp, color: 'bg-purple-500' }
+        ]);
+
+        setUpcomingSessions(upcoming);
+        setRecommendedSessions(recommended);
+      } catch (error) {
+        console.error("Firebaseからのデータ取得に失敗しました", error);
+      }
+    };
+
+    fetchData();
+  }, [user]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
