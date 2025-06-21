@@ -12,7 +12,7 @@ function SessionCreateForm() {
     difficulty: '',
     session_date: '',
     start_time: '',
-    duration_minutes: 90,
+    duration_minutes: 40,
     max_participants: 6,
     meeting_method: 'オンライン',
     zoom_link: '',
@@ -59,7 +59,7 @@ function SessionCreateForm() {
       // フォームのリセット
       setFormData({
         title: '', description: '', discussion_theme: '', difficulty: '',
-        session_date: '', start_time: '', duration_minutes: 90, max_participants: 6,
+        session_date: '', start_time: '', duration_minutes: 40, max_participants: 6,
         meeting_method: 'オンライン', zoom_link: '',
       });
 
@@ -105,7 +105,7 @@ function SessionCreateForm() {
         </div>
         <div>
           <label>所要時間 (分)*:</label>
-          <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} required />
+          <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} required min={5} max={40}/>
         </div>
         <div>
           <label>最大参加者数*:</label>
