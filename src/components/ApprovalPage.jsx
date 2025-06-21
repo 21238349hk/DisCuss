@@ -2,7 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase-config';
 import { useEffect, useState } from 'react';
-
+import '../styles/ApprovalPage.css'
 export default function ApprovalPage() {
   const [params] = useSearchParams();
   const sessionId = params.get("sessionId");
