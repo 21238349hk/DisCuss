@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { db } from '../firebase-config'; // db のみをインポート
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; // Firestore関数
+import '../styles/SessionCreateForm.css';
 
 function SessionCreateForm() {
   const [formData, setFormData] = useState({
