@@ -1,3 +1,4 @@
+// Profile.js
 import React, { useState, useEffect } from 'react';
 import '../styles/Profile.css';
 import {
@@ -15,9 +16,6 @@ export default function Profile({ onNavigate, user }) {
   });
   const [loading, setLoading] = useState(true);
 
-  const [selectedIndustry, setSelectedIndustry] = useState('');
-
-  // 🔽 ここに追加！
   const industryOptions = [
     "メーカー", "商社", "小売", "金融", "サービス",
     "IT", "マスコミ", "官公庁・公社・団体", "その他"
@@ -38,7 +36,6 @@ export default function Profile({ onNavigate, user }) {
     };
     fetchProfile();
   }, [user]);
-
 
   useEffect(() => {
     if (!user) return;
@@ -120,15 +117,12 @@ export default function Profile({ onNavigate, user }) {
     }
   };
 
-
-
   const [stats, setStats] = useState([
     { label: '参加セッション数', value: '-', icon: Calendar },
     { label: '平均評価', value: '-', icon: Star },
     { label: '作成セッション数', value: '-', icon: Award },
     { label: '成長スコア', value: '-', icon: TrendingUp }
   ]);
-
 
   const recentEvaluations = [
     { session: '金融業界志望者向けGD', score: 4.5, date: '2024-03-10' },
@@ -157,10 +151,10 @@ export default function Profile({ onNavigate, user }) {
               <div>
                 <h2>{profile.displayName}</h2>
                 <p>{profile.university} {profile.major}</p>
-                <span className={`gd-badge ${profile.gdExperience}`}>{
-                  profile.gdExperience === 'beginner' ? 'GD初級者' :
-                  profile.gdExperience === 'intermediate' ? 'GD中級者' : 'GD上級者'
-                }</span>
+                <span className={`gd-badge ${profile.gdExperience}`}>
+                  {profile.gdExperience === 'beginner' ? 'GD初級者' :
+                   profile.gdExperience === 'intermediate' ? 'GD中級者' : 'GD上級者'}
+                </span>
               </div>
             </div>
 
@@ -179,6 +173,20 @@ export default function Profile({ onNavigate, user }) {
                   <option value="intermediate">中級</option>
                   <option value="advanced">上級</option>
                 </select></label>
+                <label>志望業界:
+                  <select
+                    name="targetIndustries"
+                    value={profile.targetIndustries[0] || ''}
+                    onChange={(e) => {
+                      setProfile(prev => ({ ...prev, targetIndustries: [e.target.value] }));
+                    }}
+                  >
+                    <option value="">選択してください</option>
+                    {industryOptions.map((industry) => (
+                      <option key={industry} value={industry}>{industry}</option>
+                    ))}
+                  </select>
+                </label>
                 <div className="edit-buttons">
                   <button onClick={() => setIsEditing(false)}>キャンセル</button>
                   <button onClick={handleSave}>保存</button>
@@ -220,21 +228,6 @@ export default function Profile({ onNavigate, user }) {
               </div>
             ))}
           </div>
-
-    <div className="profile-card">
-      <h3>志望業界（選択式）</h3>
-      <select
-        value={selectedIndustry}
-        onChange={(e) => setSelectedIndustry(e.target.value)}
-      >
-    <option value="">選択してください</option>
-    {industryOptions.map((industry) => (
-      <option key={industry} value={industry}>
-        {industry}
-      </option>
-    ))}
-  </select>
-</div>
 
           <div className="profile-card">
             <h3>達成バッジ</h3>
