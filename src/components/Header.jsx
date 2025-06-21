@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Search, User } from 'lucide-react';
 import { mockNotifications } from '../data/mockData';
 import '../styles/Header.css';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase-config'; 
 
 export default function Header({ currentPage, onNavigate, user, userProfile, searchQuery, setSearchQuery }) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const unreadCount = mockNotifications.filter(n => !n.read).length;
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
 
   const navigation = [
     { name: 'ダッシュボード', key: 'dashboard' },
@@ -13,6 +17,24 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
     { name: 'セッション作成', key: 'create' },
     { name: 'プロフィール', key: 'profile' }
   ];
+
+  useEffect(() => {
+    if (!user || !user.email) return;
+
+    const q = query(
+      collection(db, 'notifications'),
+      where('to', '==', user.email) 
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setNotifications(notifs);
+      setUnreadCount(notifs.filter(n => !n.read).length);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
 
   return (
     <header className="custom-header">
@@ -60,18 +82,21 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
                 <div className="notification__dropdown">
                   <div className="notification__header">通知</div>
                   <div className="notification__list">
-                    {mockNotifications.map((notification) => (
+                    {notifications.map((notification) => (
                       <div
                         key={notification.id}
                         className={`notification__item ${!notification.read ? 'notification__item--unread' : ''}`}
                       >
-                        <h4 className="notification__title">{notification.title}</h4>
-                        <p className="notification__message">{notification.message}</p>
+                        <h4 className="notification__title">{notification.sessionTitle}</h4>
+                        <p className="notification__message">
+                          {notification.requesterEmail} が {notification.type} を申請しました
+                        </p>
                         <p className="notification__time">
-                          {new Date(notification.createdAt).toLocaleString('ja-JP')}
+                          {new Date(notification.timestamp.toDate()).toLocaleString('ja-JP')}
                         </p>
                       </div>
                     ))}
+
                   </div>
                 </div>
               )}
