@@ -5,7 +5,7 @@ import {
   Award, Calendar, TrendingUp, Users
 } from 'lucide-react';
 import { db } from '../firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 
 export default function Profile({ onNavigate, user }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -31,6 +31,42 @@ export default function Profile({ onNavigate, user }) {
     fetchProfile();
   }, [user]);
 
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchStats = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'sessions'));
+        let joined = 0;
+        let created = 0;
+        let scores = [];
+
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.participants?.includes(user.uid)) joined++;
+          if (data.hostId === user.uid) created++;
+          const score = data.evaluations?.[user.uid];
+          if (typeof score === 'number') scores.push(score);
+        });
+
+        const avgScore = scores.length > 0
+          ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
+          : 'N/A';
+
+        setStats([
+          { label: '参加セッション数', value: String(joined), icon: Calendar },
+          { label: '平均評価', value: String(avgScore), icon: Star },
+          { label: '作成セッション数', value: String(created), icon: Award },
+          { label: '成長スコア', value: '+18%', icon: TrendingUp }
+        ]);
+      } catch (err) {
+        console.error("統計取得エラー:", err);
+      }
+    };
+
+    fetchStats();
+  }, [user]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
@@ -40,8 +76,34 @@ export default function Profile({ onNavigate, user }) {
     if (!user) return;
     try {
       const docRef = doc(db, 'users', user.uid);
-      await setDoc(docRef, profile, { merge: true });
-      alert('プロフィールを保存しました！');
+
+      const snapshot = await getDocs(collection(db, 'sessions'));
+      let joined = 0;
+      let created = 0;
+      let scores = [];
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data.participants?.includes(user.uid)) joined++;
+        if (data.hostId === user.uid) created++;
+        const score = data.evaluations?.[user.uid];
+        if (typeof score === 'number') scores.push(score);
+      });
+
+      const avgScore = scores.length > 0
+        ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
+        : 'N/A';
+
+      await setDoc(docRef, {
+        ...profile,
+        stats: {
+          joinedSessions: joined,
+          createdSessions: created,
+          avgEvaluation: avgScore
+        }
+      }, { merge: true });
+
+      alert('プロフィールと統計を保存しました！');
       setIsEditing(false);
       onNavigate('dashboard');
     } catch (error) {
@@ -50,12 +112,15 @@ export default function Profile({ onNavigate, user }) {
     }
   };
 
-  const stats = [
-    { label: '参加セッション数', value: '24', icon: Calendar },
-    { label: '平均評価', value: '4.2', icon: Star },
-    { label: '作成セッション数', value: '8', icon: Award },
-    { label: '成長スコア', value: '+18%', icon: TrendingUp }
-  ];
+
+
+  const [stats, setStats] = useState([
+    { label: '参加セッション数', value: '-', icon: Calendar },
+    { label: '平均評価', value: '-', icon: Star },
+    { label: '作成セッション数', value: '-', icon: Award },
+    { label: '成長スコア', value: '-', icon: TrendingUp }
+  ]);
+
 
   const recentEvaluations = [
     { session: '金融業界志望者向けGD', score: 4.5, date: '2024-03-10' },
