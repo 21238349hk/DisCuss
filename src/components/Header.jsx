@@ -15,7 +15,8 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
     { name: 'ダッシュボード', key: 'dashboard' },
     { name: 'セッション一覧', key: 'sessions' },
     { name: 'セッション作成', key: 'create' },
-    { name: 'プロフィール', key: 'profile' }
+    { name: 'プロフィール', key: 'profile' },
+    { name: 'AI相談', key: 'ai-chat' }
   ];
 
   useEffect(() => {
