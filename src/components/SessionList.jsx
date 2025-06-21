@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase-config';
-import '../styles/SessionList.css'; // CSSファイルをインポート
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import '../styles/SessionList.css';
+import { collection, query, orderBy, onSnapshot, addDoc } from 'firebase/firestore';
 
 function SessionList() {
   const [sessions, setSessions] = useState([]);
@@ -15,23 +15,23 @@ function SessionList() {
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const sessionsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
-        const sessionDateTime = data.session_datetime ? data.session_datetime.toDate() : null;
-        const createdAt = data.createdAt ? data.createdAt.toDate() : null;
-        const updatedAt = data.updatedAt ? data.updatedAt.toDate() : null;
+        const sessionDateTime = data.session_datetime?.toDate() || null;
+        const createdAt = data.createdAt?.toDate() || null;
+        const updatedAt = data.updatedAt?.toDate() || null;
 
         return {
           id: doc.id,
           ...data,
-          session_date: sessionDateTime ? sessionDateTime.toLocaleDateString('ja-JP') : 'N/A', // 日本語形式で日付表示
-          start_time: sessionDateTime ? sessionDateTime.toTimeString().substring(0, 5) : 'N/A', //
-          createdAt: createdAt ? createdAt.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'N/A', // 日本語形式で日時表示
-          updatedAt: updatedAt ? updatedAt.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'N/A', // 日本語形式で日時表示
+          session_date: sessionDateTime ? sessionDateTime.toLocaleDateString('ja-JP') : 'N/A',
+          start_time: sessionDateTime ? sessionDateTime.toTimeString().substring(0, 5) : 'N/A',
+          createdAt: createdAt ? createdAt.toLocaleString('ja-JP') : 'N/A',
+          updatedAt: updatedAt ? updatedAt.toLocaleString('ja-JP') : 'N/A',
         };
       });
       setSessions(sessionsData);
       setLoading(false);
     }, (err) => {
-      console.error("セッションのリアルタイム取得中にエラーが発生しました:", err);
+      console.error("セッションの取得エラー:", err);
       setError("セッションの読み込みに失敗しました。");
       setLoading(false);
     });
@@ -39,13 +39,22 @@ function SessionList() {
     return () => unsubscribe();
   }, []);
 
-  if (loading) {
-    return <p>セッションを読み込み中...</p>;
-  }
+  const handleRequest = async (sessionId, type) => {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        sessionId,
+        type, 
+        timestamp: new Date(),
+      });
+      alert(`${type}申請を送信しました。`);
+    } catch (err) {
+      console.error("通知送信エラー:", err);
+      alert("申請の送信に失敗しました。");
+    }
+  };
 
-  if (error) {
-    return <p style={{ color: 'red' }}>{error}</p>;
-  }
+  if (loading) return <p>セッションを読み込み中...</p>;
+  if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
     <div className="session-container">
@@ -53,7 +62,7 @@ function SessionList() {
       {sessions.length === 0 ? (
         <p>まだセッションがありません。</p>
       ) : (
-        <ul className="session-list"> {/* この ul に Grid スタイルを適用 */}
+        <ul className="session-list">
           {sessions.map((session) => (
             <li key={session.id} className="session-item float-animate">
               <div className="session-content">
@@ -70,14 +79,27 @@ function SessionList() {
                   <p><strong>Zoomリンク:</strong> <a href={session.zoom_link} target="_blank" rel="noopener noreferrer">{session.zoom_link}</a></p>
                 )}
               </div>
-              {session.createdAt && session.updatedAt && (
-                <div className="session-meta-container">
-                  <p className="session-meta">
-                    作成日時: {session.createdAt} |
-                    更新日時: {session.updatedAt}
-                  </p>
-                </div>
-              )}
+
+              <div className="session-actions">
+                <button
+                  className="request-button join"
+                  onClick={() => handleRequest(session.id, '参加')}
+                >
+                  参加申請
+                </button>
+                <button
+                  className="request-button observe"
+                  onClick={() => handleRequest(session.id, '見学')}
+                >
+                  見学申請
+                </button>
+              </div>
+
+              <div className="session-meta-container">
+                <p className="session-meta">
+                  作成日時: {session.createdAt} | 更新日時: {session.updatedAt}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
