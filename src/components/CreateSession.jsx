@@ -18,11 +18,15 @@ function SessionCreateForm() {
     meeting_method: 'オンライン',
     zoom_link: '',
   });
+
+  // 両方の変更で必要となるstateを統合
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [user, setUser] = useState(null);
+  const [isIssuingUrl, setIsIssuingUrl] = useState(false);
 
+  // ログイン状態を監視する機能
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -42,9 +46,10 @@ function SessionCreateForm() {
     }));
   };
 
+  // Zoom URLを発行する機能
   const handleIssueZoomUrl = async () => {
     setIsIssuingUrl(true);
-    setError('');
+    setError(null);
     try {
       const response = await fetch('http://localhost:5001/api/create-zoom-meeting', {
         method: 'POST',
@@ -72,6 +77,7 @@ function SessionCreateForm() {
     }
   };
 
+  // フォーム送信時に確認モーダルを表示する機能
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -85,6 +91,7 @@ function SessionCreateForm() {
     setShowConfirmation(true);
   };
 
+  // 確認モーダルで「決定」を押したときの処理
   const handleConfirm = async () => {
     setMessage('');
     setError(null);
@@ -110,7 +117,7 @@ function SessionCreateForm() {
         zoom_link: formData.meeting_method === 'オンライン' ? formData.zoom_link : null,
         createdBy: user.uid,
         createdByName: user.displayName || user.email,
-        userEmail: user.email, // ★ ここを追加：ユーザーのGmailアドレスを保存
+        userEmail: user.email,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -195,14 +202,24 @@ function SessionCreateForm() {
               <option value="対面">対面</option>
             </select>
           </div>
+          
+          {/* Zoom発行ボタンを相手のUIに統合 */}
           {formData.meeting_method === 'オンライン' && (
             <div>
               <label>Zoom招待リンク:</label>
               <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} placeholder="https://zoom.us/j/..." />
+              <button
+                type="button"
+                onClick={handleIssueZoomUrl}
+                disabled={isIssuingUrl}
+                style={{ marginLeft: '10px' }}
+              >
+                {isIssuingUrl ? '発行中...' : 'Zoom URLを即時発行'}
+              </button>
             </div>
           )}
 
-          <button type="submit" disabled={!user}>セッションを保存</button>
+          <button type="submit" disabled={!user}>内容を確認して作成</button>
         </form>
       </div>
 
@@ -227,13 +244,6 @@ function SessionCreateForm() {
               <p><strong>開催方式:</strong> {formData.meeting_method}</p>
               {formData.meeting_method === 'オンライン' && formData.zoom_link && (
                 <p><strong>Zoom招待リンク:</strong> {formData.zoom_link}</p>
-              )}
-              {user && (
-                <>
-                  <p><strong>作成者UID:</strong> {user.uid}</p>
-                  <p><strong>作成者名:</strong> {user.displayName || user.email}</p>
-                  <p><strong>作成者Gmail:</strong> {user.email}</p> {/* ★ ここを確認モーダルにも表示 (任意) */}
-                </>
               )}
             </div>
             <div className="confirmation-buttons">
