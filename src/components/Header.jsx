@@ -42,7 +42,7 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  onNavigate('sessions'); // 検索入力時にセッション一覧ページに移動
+                  onNavigate('sessions'); 
                 }}
               />
             </div>
