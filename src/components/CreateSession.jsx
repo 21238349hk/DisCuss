@@ -246,13 +246,6 @@ function SessionCreateForm() {
               {formData.meeting_method === 'オンライン' && formData.zoom_link && (
                 <p><strong>Zoom招待リンク:</strong> {formData.zoom_link}</p>
               )}
-              {user && (
-                <>
-                  <p><strong>作成者UID:</strong> {user.uid}</p>
-                  <p><strong>作成者名:</strong> {user.displayName || user.email}</p>
-                  <p><strong>作成者Gmail:</strong> {user.email}</p>
-                </>
-              )}
             </div>
             <div className="confirmation-buttons">
               <button onClick={handleConfirm} className="confirm-button">決定</button>
