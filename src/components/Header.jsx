@@ -1,12 +1,10 @@
-// Header.tsx
 import React, { useState } from 'react';
-import { Bell, Search, User, Menu, X } from 'lucide-react';
-import { currentUser, mockNotifications } from '../data/mockData';
+import { Bell, Search, User } from 'lucide-react';
+import { mockNotifications } from '../data/mockData';
 import '../styles/Header.css';
 
-export default function Header({ currentPage, onNavigate }) {
+export default function Header({ currentPage, onNavigate, user, userProfile, searchQuery, setSearchQuery }) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const unreadCount = mockNotifications.filter(n => !n.read).length;
 
   const navigation = [
@@ -41,6 +39,11 @@ export default function Header({ currentPage, onNavigate }) {
                 type="text"
                 className="search-bar__input"
                 placeholder="セッションを検索..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  onNavigate('sessions'); // 検索入力時にセッション一覧ページに移動
+                }}
               />
             </div>
 
@@ -78,13 +81,19 @@ export default function Header({ currentPage, onNavigate }) {
               onClick={() => onNavigate('profile')}
               className="profile-button"
             >
-              <img src={currentUser.avatar} alt={currentUser.name} className="profile-button__avatar" />
-              <span className="profile-button__name">{currentUser.name}</span>
+              {userProfile && userProfile.photoURL ? (
+                <img src={userProfile.photoURL} alt={userProfile.displayName} className="profile-button__avatar" />
+              ) : (
+                <div className="profile-button__avatar-placeholder">
+                  <User size={20} />
+                </div>
+              )}
+              <span className="profile-button__name">
+                {userProfile ? userProfile.displayName : (user ? user.displayName : 'プロフィールを登録')}
+              </span>
             </button>
-
           </div>
         </div>
-
       </div>
     </header>
   );
