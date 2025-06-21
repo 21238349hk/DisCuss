@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, Users, Trophy, TrendingUp, Clock, MapPin, Video } from 'lucide-react';
 import { mockSessions, currentUser } from '../data/mockData';
-
+import '../styles/Dashboard.css'
 export default function Dashboard({ onNavigate }) {
   const upcomingSessions = mockSessions.filter(session => 
     session.participants.some(p => p.id === currentUser.id) && 
@@ -23,72 +23,60 @@ export default function Dashboard({ onNavigate }) {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Welcome Section */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">
+      <div className="dashboard-header">
+        <h1 className="dashboard-title">
           おかえりなさい、{currentUser.name}さん
         </h1>
-        <p className="text-gray-600 mt-2">今日も就活スキルを磨いていきましょう！</p>
+        <p className="dashboard-subtitle">今日も就活スキルを磨いていきましょう！</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="stats-grid">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className={`${stat.color} p-3 rounded-lg`}>
-                <stat.icon className="h-6 w-6 text-white" />
+          <div key={index} className="stat-card">
+            <div className="stat-content">
+              <div className={`stat-icon ${stat.color}`}>
+                <stat.icon className="icon-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-sm text-gray-600">{stat.label}</p>
+              <div className="stat-text">
+                <p className="stat-value">{stat.value}</p>
+                <p className="stat-label">{stat.label}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <div className="session-grid">
         {/* Upcoming Sessions */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">参加予定のセッション</h2>
+        <div className="session-box">
+          <div className="session-box-header">
+            <h2 className="session-box-title">参加予定のセッション</h2>
           </div>
-          <div className="p-6">
+          <div className="session-box-body">
             {upcomingSessions.length > 0 ? (
-              <div className="space-y-4">
+              <div className="session-list">
                 {upcomingSessions.map((session) => (
-                  <div key={session.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-gray-900">{session.title}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        session.difficulty === 'beginner' ? 'bg-green-100 text-green-800' :
-                        session.difficulty === 'intermediate' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
+                  <div key={session.id} className="session-item">
+                    <div className="session-item-header">
+                      <h3 className="session-title">{session.title}</h3>
+                      <span className={`session-tag ${
+                        session.difficulty === 'beginner' ? 'diff-beginner' :
+                        session.difficulty === 'intermediate' ? 'diff-intermediate' :
+                        'diff-advanced'
                       }`}>
                         {session.difficulty === 'beginner' ? '初級' :
-                         session.difficulty === 'intermediate' ? '中級' : '上級'}
+                        session.difficulty === 'intermediate' ? '中級' : '上級'}
                       </span>
                     </div>
-                    <div className="flex items-center text-sm text-gray-600 space-x-4">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {new Date(session.scheduledAt).toLocaleDateString('ja-JP')}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {session.duration}分
-                      </div>
-                      <div className="flex items-center">
+                    <div className="session-item-info">
+                      <div><Calendar className="icon-small" />{new Date(session.scheduledAt).toLocaleDateString('ja-JP')}</div>
+                      <div><Clock className="icon-small" />{session.duration}分</div>
+                      <div>
                         {session.location === 'online' ? (
-                          <>
-                            <Video className="h-4 w-4 mr-1" />
-                            オンライン
-                          </>
+                          <><Video className="icon-small" />オンライン</>
                         ) : (
-                          <>
-                            <MapPin className="h-4 w-4 mr-1" />
-                            オフライン
-                          </>
+                          <><MapPin className="icon-small" />オフライン</>
                         )}
                       </div>
                     </div>
@@ -96,13 +84,10 @@ export default function Dashboard({ onNavigate }) {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">参加予定のセッションがありません</p>
-                <button
-                  onClick={() => onNavigate('sessions')}
-                  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
+              <div className="session-empty">
+                <Calendar className="icon-large" />
+                <p>参加予定のセッションがありません</p>
+                <button onClick={() => onNavigate('sessions')} className="button-primary">
                   セッションを探す
                 </button>
               </div>
@@ -111,36 +96,30 @@ export default function Dashboard({ onNavigate }) {
         </div>
 
         {/* Recommended Sessions */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">おすすめのセッション</h2>
+        <div className="session-box">
+          <div className="session-box-header">
+            <h2 className="session-box-title">おすすめのセッション</h2>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
+          <div className="session-box-body">
+            <div className="session-list">
               {recommendedSessions.slice(0, 3).map((session) => (
-                <div key={session.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-gray-900">{session.title}</h3>
-                    <span className="text-sm text-gray-500">
-                      {session.currentParticipants}/{session.maxParticipants}人
-                    </span>
+                <div key={session.id} className="session-item clickable">
+                  <div className="session-item-header">
+                    <h3 className="session-title">{session.title}</h3>
+                    <span className="participant-count">{session.currentParticipants}/{session.maxParticipants}人</span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-3">{session.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-3">
+                  <p className="session-description">{session.description}</p>
+                  <div className="session-tags">
                     {session.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                        {tag}
-                      </span>
+                      <span key={tag} className="tag">{tag}</span>
                     ))}
                   </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Calendar className="h-4 w-4 mr-1" />
+                  <div className="session-footer">
+                    <div className="session-date">
+                      <Calendar className="icon-small" />
                       {new Date(session.scheduledAt).toLocaleDateString('ja-JP')}
                     </div>
-                    <button className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-colors">
-                      参加する
-                    </button>
+                    <button className="button-secondary">参加する</button>
                   </div>
                 </div>
               ))}
@@ -149,21 +128,23 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </div>
 
+
       {/* Quick Actions */}
-      <div className="mt-8 bg-gradient-to-r from-blue-600 to-green-500 rounded-xl p-6 text-white">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <div>
-            <h3 className="text-xl font-semibold mb-2">新しいセッションを作成しませんか？</h3>
-            <p className="text-blue-100">他の就活生と一緒にスキルアップしましょう</p>
-          </div>
-          <button
-            onClick={() => onNavigate('create')}
-            className="mt-4 md:mt-0 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-          >
-            セッションを作成
-          </button>
+      <div className="quick-action-container">
+      <div className="quick-action-content">
+        <div className="quick-action-text">
+          <h3 className="quick-action-title">新しいセッションを作成しませんか？</h3>
+          <p className="quick-action-subtext">他の就活生と一緒にスキルアップしましょう</p>
         </div>
+        <button
+          onClick={() => onNavigate('create')}
+          className="quick-action-button"
+        >
+          セッションを作成
+        </button>
       </div>
+    </div>
+
     </div>
   );
 }

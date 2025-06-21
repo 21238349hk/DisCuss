@@ -18,10 +18,10 @@ export default function Header({ currentPage, onNavigate }) {
   ];
 
   return (
-    <header className="header">
+    <header className="custom-header">
       <div className="header__container">
         <div className="header__row">
-          <div className="header__logo">GD Connect</div>
+          <div className="header__logo">DisCuss</div>
 
           <nav className="header__nav">
             {navigation.map((item) => (
@@ -83,31 +83,9 @@ export default function Header({ currentPage, onNavigate }) {
               <span className="profile-button__name">{currentUser.name}</span>
             </button>
 
-            {/* <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="header__menu-button"
-            >
-              {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button> */}
           </div>
         </div>
 
-        {/* {showMobileMenu && (
-          <div className="header__mobile-nav">
-            {navigation.map((item) => (
-              <button
-                key={item.key}
-                onClick={() => {
-                  onNavigate(item.key);
-                  setShowMobileMenu(false);
-                }}
-                className={`header__mobile-nav-item ${currentPage === item.key ? 'header__nav-item--active' : ''}`}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
-        )} */}
       </div>
     </header>
   );
