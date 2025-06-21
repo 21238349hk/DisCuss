@@ -1,7 +1,9 @@
-// frontend/src/components/SessionCreateForm.js
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase-config';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  collection, addDoc, serverTimestamp,
+  doc, getDoc, updateDoc
+} from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import '../styles/SessionCreateForm.css';
 
@@ -19,21 +21,15 @@ function SessionCreateForm() {
     zoom_link: '',
   });
 
-  // 両方の変更で必要となるstateを統合
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [user, setUser] = useState(null);
   const [isIssuingUrl, setIsIssuingUrl] = useState(false);
 
-  // ログイン状態を監視する機能
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-      }
+      setUser(currentUser || null);
     });
     return () => unsubscribe();
   }, []);
@@ -46,16 +42,13 @@ function SessionCreateForm() {
     }));
   };
 
-  // Zoom URLを発行する機能
   const handleIssueZoomUrl = async () => {
     setIsIssuingUrl(true);
     setError(null);
     try {
       const response = await fetch('https://us-central1-gd-tanyao.cloudfunctions.net/createZoomMeeting', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: formData.title || '新しいセッション' }),
       });
 
@@ -77,7 +70,6 @@ function SessionCreateForm() {
     }
   };
 
-  // フォーム送信時に確認モーダルを表示する機能
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -91,7 +83,6 @@ function SessionCreateForm() {
     setShowConfirmation(true);
   };
 
-  // 確認モーダルで「決定」を押したときの処理
   const handleConfirm = async () => {
     setMessage('');
     setError(null);
@@ -123,6 +114,20 @@ function SessionCreateForm() {
       };
 
       const docRef = await addDoc(sessionsCollectionRef, sessionDataToSave);
+
+      // 🔽 プロフィールの「作成セッション数」を+1更新
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const currentData = userDocSnap.data();
+        const prevCreated = currentData?.stats?.createdSessions || 0;
+
+        await updateDoc(userDocRef, {
+          'stats.createdSessions': prevCreated + 1
+        });
+      }
+
       setMessage(`セッションが正常に作成されました。ドキュメントID: ${docRef.id}`);
       setFormData({
         title: '', description: '', discussion_theme: '', difficulty: '',
@@ -151,22 +156,16 @@ function SessionCreateForm() {
         <h2 className="section-title">基本情報</h2>
         <form onSubmit={handleSubmit}>
           <div>
-            <label>
-              セッションタイトル
-            </label>
-            <input type="text" name="title" value={formData.title} onChange={handleChange} required placeholder="例: 金融業界志望者向けGD" />
+            <label>セッションタイトル</label>
+            <input type="text" name="title" value={formData.title} onChange={handleChange} required />
           </div>
           <div>
-            <label>
-              セッション説明
-              </label>
-            <textarea name="description" value={formData.description} onChange={handleChange} required placeholder="セッションの目的や内容について詳しく説明してください..." rows="5"></textarea>
+            <label>セッション説明</label>
+            <textarea name="description" value={formData.description} onChange={handleChange} required rows="5" />
           </div>
           <div>
-            <label>
-              ディスカッションテーマ
-            </label>
-            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required placeholder="例: 就活の課題を解決するには" />
+            <label>ディスカッションテーマ</label>
+            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required />
           </div>
           <div className="form-row">
             <div>
@@ -174,62 +173,51 @@ function SessionCreateForm() {
               <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
                 <option value="">選択してください</option>
                 <option value="初級">初級</option>
-                <option value="中級">中級 (ある程度の経験あり)</option>
+                <option value="中級">中級</option>
                 <option value="上級">上級</option>
               </select>
             </div>
           </div>
           <div>
-            <label>
-              開催日
-            </label>
+            <label>開催日</label>
             <input type="date" name="session_date" value={formData.session_date} onChange={handleChange} required />
           </div>
           <div>
-            <label>
-              開始時間
-            </label>
+            <label>開始時間</label>
             <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
           </div>
           <div>
-            <label>
-              所要時間 (分)
-            </label>
-            <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} required min={5} max={40} />
+            <label>所要時間 (分)</label>
+            <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} min={5} max={40} required />
           </div>
           <div>
-            <label>
-              最大参加者数
-            </label>
+            <label>最大参加者数</label>
             <input type="number" name="max_participants" value={formData.max_participants} onChange={handleChange} required />
           </div>
           <div>
-            <label>
-              開催方式
-            </label>
-            <select name="meeting_method" value={formData.meeting_method} onChange={handleChange} required>
+            <label>開催方式</label>
+            <select name="meeting_method" value={formData.meeting_method} onChange={handleChange}>
               <option value="オンライン">オンライン</option>
               <option value="対面">対面</option>
             </select>
           </div>
-          
-          {/* Zoom発行ボタンを相手のUIに統合 */}
+
           {formData.meeting_method === 'オンライン' && (
             <div>
               <label>Zoom招待リンク:</label>
-              <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} placeholder="https://zoom.us/j/..." />
+              <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} />
               <button
                 type="button"
                 onClick={handleIssueZoomUrl}
                 disabled={isIssuingUrl}
-                      style={{
-                        marginTop: '8px',
-                        backgroundColor: 'black', // 例: 青系の色
-                        color: 'white',             // 例: 白い文字色
-                        padding: '8px 3px',        // 例: パディングを追加
-                        border: 'none',             // 例: ボーダーをなくす
-                        borderRadius: '4px'         // 例: 角丸にする
-                      }}
+                style={{
+                  marginTop: '8px',
+                  backgroundColor: 'black',
+                  color: 'white',
+                  padding: '8px 3px',
+                  border: 'none',
+                  borderRadius: '4px'
+                }}
               >
                 {isIssuingUrl ? '発行中...' : 'Zoom URLを即時発行'}
               </button>
@@ -243,7 +231,6 @@ function SessionCreateForm() {
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* 確認モーダル */}
       {showConfirmation && (
         <div className="confirmation-modal-overlay">
           <div className="confirmation-modal-content">

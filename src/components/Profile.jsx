@@ -1,4 +1,3 @@
-// Profile.js
 import React, { useState, useEffect } from 'react';
 import '../styles/Profile.css';
 import {
@@ -15,6 +14,13 @@ export default function Profile({ onNavigate, user }) {
     year: '大学3年生', targetIndustries: [], gdExperience: 'beginner'
   });
   const [loading, setLoading] = useState(true);
+
+  const [stats, setStats] = useState([
+    { label: '参加セッション数', value: '-', icon: Calendar },
+    { label: '平均評価', value: '-', icon: Star },
+    { label: '作成セッション数', value: '-', icon: Award },
+    { label: '成長スコア', value: '-', icon: TrendingUp }
+  ]);
 
   const industryOptions = [
     "メーカー", "商社", "小売", "金融", "サービス",
@@ -49,7 +55,7 @@ export default function Profile({ onNavigate, user }) {
         snapshot.forEach((doc) => {
           const data = doc.data();
           if (data.participants?.includes(user.uid)) joined++;
-          if (data.hostId === user.uid) created++;
+          if (data.createdBy === user.uid) created++; // 🔁 修正済
           const score = data.evaluations?.[user.uid];
           if (typeof score === 'number') scores.push(score);
         });
@@ -90,7 +96,7 @@ export default function Profile({ onNavigate, user }) {
       snapshot.forEach((doc) => {
         const data = doc.data();
         if (data.participants?.includes(user.uid)) joined++;
-        if (data.hostId === user.uid) created++;
+        if (data.createdBy === user.uid) created++; // 🔁 修正済
         const score = data.evaluations?.[user.uid];
         if (typeof score === 'number') scores.push(score);
       });
@@ -116,13 +122,6 @@ export default function Profile({ onNavigate, user }) {
       alert('プロフィールの保存に失敗しました。');
     }
   };
-
-  const [stats, setStats] = useState([
-    { label: '参加セッション数', value: '-', icon: Calendar },
-    { label: '平均評価', value: '-', icon: Star },
-    { label: '作成セッション数', value: '-', icon: Award },
-    { label: '成長スコア', value: '-', icon: TrendingUp }
-  ]);
 
   const recentEvaluations = [
     { session: '金融業界志望者向けGD', score: 4.5, date: '2024-03-10' },
