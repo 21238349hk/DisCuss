@@ -6,8 +6,9 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import SessionList from './components/SessionList';
 import CreateSession from './components/CreateSession';
-import Profile from './components/Profile';
+//import Profile from './components/Profile';
 import Login from './components/Login';
+import Profile from './components/SessionCreateForm'; //セッション登録の画面
 
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
