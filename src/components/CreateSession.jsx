@@ -147,12 +147,6 @@ function SessionCreateForm() {
       <h1>新しいGDセッションを作成</h1>
       <p className="form-description">他の就活生と一緒に学べるセッションを企画しましょう</p>
 
-      {user ? (
-        <p className="login-status">ログイン中: {user.displayName || user.email}</p>
-      ) : (
-        <p className="login-status-warning">セッションを作成するにはログインが必要です。 (ダッシュボードなどからログインしてください)</p>
-      )}
-
       <div className="form-section">
         <h2 className="section-title">基本情報</h2>
         <form onSubmit={handleSubmit}>
@@ -166,7 +160,7 @@ function SessionCreateForm() {
           </div>
           <div>
             <label>ディスカッションテーマ*:</label>
-            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required placeholder="例: 新規事業立案" />
+            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required placeholder="例: 就活の課題を解決するには" />
           </div>
           <div className="form-row">
             <div>
@@ -212,7 +206,14 @@ function SessionCreateForm() {
                 type="button"
                 onClick={handleIssueZoomUrl}
                 disabled={isIssuingUrl}
-                style={{ marginLeft: '10px' }}
+                      style={{
+                        marginTop: '8px',
+                        backgroundColor: 'black', // 例: 青系の色
+                        color: 'white',             // 例: 白い文字色
+                        padding: '8px 3px',        // 例: パディングを追加
+                        border: 'none',             // 例: ボーダーをなくす
+                        borderRadius: '4px'         // 例: 角丸にする
+                      }}
               >
                 {isIssuingUrl ? '発行中...' : 'Zoom URLを即時発行'}
               </button>
