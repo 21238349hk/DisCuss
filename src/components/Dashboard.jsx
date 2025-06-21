@@ -11,7 +11,7 @@ import {
 import { mockSessions, currentUser } from '../data/mockData';
 import '../styles/Dashboard.css';
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard({ onNavigate, user }) {
   const upcomingSessions = mockSessions.filter(
     session =>
       session.participants.some(p => p.id === currentUser.id) &&
@@ -35,7 +35,7 @@ export default function Dashboard({ onNavigate }) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="dashboard-header">
         <h1 className="dashboard-title">
-          おかえりなさい、{currentUser.name}さん
+          おかえりなさい、{user ? user.displayName : 'ゲスト'}さん
         </h1>
         <p className="dashboard-subtitle">
           今日も就活スキルを磨いていきましょう！
