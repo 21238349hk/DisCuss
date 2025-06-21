@@ -60,8 +60,10 @@ function App() {
           <SessionList
             onNavigate={setCurrentPage}
             searchQuery={searchQuery}
+            currentUser={user}
           />
         );
+
       case 'create':
         return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':

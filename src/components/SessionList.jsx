@@ -10,7 +10,7 @@ import {
   addDoc
 } from 'firebase/firestore';
 
-function SessionList({ searchQuery, currentUser }) {
+function SessionList({ currentUser }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,6 +31,7 @@ function SessionList({ searchQuery, currentUser }) {
           start_time: sessionDateTime?.toTimeString().substring(0, 5) || 'N/A',
           createdAt: doc.data().createdAt?.toDate().toLocaleString('ja-JP') || 'N/A',
           updatedAt: doc.data().updatedAt?.toDate().toLocaleString('ja-JP') || 'N/A',
+          ownerEmail: doc.data().userEmail || 'default_owner@example.com',
         };
       });
       setSessions(data);
@@ -68,8 +69,6 @@ function SessionList({ searchQuery, currentUser }) {
   };
 
   const handleConfirm = async () => {
-    console.log('currentUser:', currentUser);
-
     if (!selectedSession || !currentUser) return;
 
     setIsSubmitting(true);
@@ -79,13 +78,13 @@ function SessionList({ searchQuery, currentUser }) {
         type: requestType,
         timestamp: new Date(),
         sessionTitle: selectedSession.title,
-        requesterId: currentUser.id || 'anonymous',
+        requesterId: currentUser.uid || 'anonymous',
         requesterEmail: currentUser.email || 'anonymous@example.com',
         status: 'pending',
       });
 
       await sendEmailToOwner(
-        selectedSession.ownerEmail,
+        selectedSession.userEmail,
         selectedSession.title,
         currentUser.email || 'anonymous@example.com',
         requestType,
@@ -107,19 +106,14 @@ function SessionList({ searchQuery, currentUser }) {
   if (loading) return <p>セッションを読み込み中...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
-  const filteredSessions = sessions.filter((session) =>
-    session.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   return (
     <div className="session-container">
       <h1>セッション一覧</h1>
-
-      {filteredSessions.length === 0 ? (
-        <p>該当するセッションがありません。</p>
+      {sessions.length === 0 ? (
+        <p>まだセッションがありません。</p>
       ) : (
         <ul className="session-list">
-          {filteredSessions.map((session) => (
+          {sessions.map((session) => (
             <li key={session.id} className="session-item float-animate">
               <div className="session-content">
                 <h2>{session.title}</h2>
