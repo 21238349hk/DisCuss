@@ -83,16 +83,16 @@ export default function Header({ currentPage, onNavigate }) {
               <span className="profile-button__name">{currentUser.name}</span>
             </button>
 
-            <button
+            {/* <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className="header__menu-button"
             >
               {showMobileMenu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+            </button> */}
           </div>
         </div>
 
-        {showMobileMenu && (
+        {/* {showMobileMenu && (
           <div className="header__mobile-nav">
             {navigation.map((item) => (
               <button
@@ -107,7 +107,7 @@ export default function Header({ currentPage, onNavigate }) {
               </button>
             ))}
           </div>
-        )}
+        )} */}
       </div>
     </header>
   );

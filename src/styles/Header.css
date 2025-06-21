@@ -1,10 +1,12 @@
 .header {
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(to right, #2d6cdf, #00c0f1);
+  border: none;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
   z-index: 50;
+  color: white;
+  font-family: "Segoe UI", "Noto Sans JP", sans-serif;
 }
 
 .header__container {
@@ -17,16 +19,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 64px;
+  height: 100px;
 }
 
 .header__logo {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: bold;
-  background: linear-gradient(to right, #2563eb, #10b981);
+  background: linear-gradient(270deg, #ec38bc, #7303c0, #2d6cdf);
+  background-size: 600% 600%;
+  animation: gradientShift 6s ease infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: transparent; 
 }
+
+
 
 .header__nav {
   display: none;
@@ -41,7 +48,7 @@
 
 .header__nav-item {
   background: transparent;
-  color: #4b5563;
+  color: #ffffff;
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 0.875rem;
@@ -56,6 +63,12 @@
 }
 
 .header__nav-item--active {
-  background-color: #eff6ff;
+  background-color: rgba(255, 255, 255, 0.9);
   color: #2563eb;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
