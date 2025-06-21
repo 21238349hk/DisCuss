@@ -15,7 +15,8 @@ import '../src/styles/App.css';
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // 【追加】ローディング状態を管理
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -25,16 +26,15 @@ function App() {
         const docSnap = await getDoc(userDocRef);
 
         if (docSnap.exists()) {
-          // プロフィールが存在する場合、ダッシュボードへ
+          setUserProfile(docSnap.data());
           setCurrentPage('dashboard');
         } else {
-          // プロフィールが存在しない場合、プロフィール設定ページへ
           console.log("プロフィールが見つかりません。作成ページに移動します。");
           setCurrentPage('profile');
         }
       } else {
         setUser(null);
-        setUserProfile(null); // ログアウト時にプロフィール情報をクリア
+        setUserProfile(null);
         setCurrentPage('login');
       }
       setLoading(false);
@@ -53,7 +53,7 @@ function App() {
 
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} user={userProfile} />; // userProfileを渡す
+        return <Dashboard onNavigate={setCurrentPage} user={userProfile} />;
       case 'sessions':
         return <SessionList onNavigate={setCurrentPage} />;
       case 'create':
@@ -65,14 +65,12 @@ function App() {
       case 'profile':
         return <Profile onNavigate={setCurrentPage} user={user} />;
       default:
-        // デフォルトはダッシュボードへ
-        return <Dashboard onNavigate={setCurrentPage} />;
+        return <Dashboard onNavigate={setCurrentPage} user={userProfile} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ログインしている時だけヘッダーを表示 */}
       {user && <Header currentPage={currentPage} onNavigate={setCurrentPage} user={user} />}
       <main>
         {renderCurrentPage()}
