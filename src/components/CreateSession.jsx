@@ -151,20 +151,26 @@ function SessionCreateForm() {
         <h2 className="section-title">基本情報</h2>
         <form onSubmit={handleSubmit}>
           <div>
-            <label>セッションタイトル*:</label>
+            <label>
+              セッションタイトル
+            </label>
             <input type="text" name="title" value={formData.title} onChange={handleChange} required placeholder="例: 金融業界志望者向けGD" />
           </div>
           <div>
-            <label>セッション説明*:</label>
+            <label>
+              セッション説明
+              </label>
             <textarea name="description" value={formData.description} onChange={handleChange} required placeholder="セッションの目的や内容について詳しく説明してください..." rows="5"></textarea>
           </div>
           <div>
-            <label>ディスカッションテーマ*:</label>
+            <label>
+              ディスカッションテーマ
+            </label>
             <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required placeholder="例: 就活の課題を解決するには" />
           </div>
           <div className="form-row">
             <div>
-              <label>難易度:</label>
+              <label>難易度</label>
               <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
                 <option value="">選択してください</option>
                 <option value="初級">初級</option>
@@ -174,23 +180,33 @@ function SessionCreateForm() {
             </div>
           </div>
           <div>
-            <label>開催日*:</label>
+            <label>
+              開催日
+            </label>
             <input type="date" name="session_date" value={formData.session_date} onChange={handleChange} required />
           </div>
           <div>
-            <label>開始時間*:</label>
+            <label>
+              開始時間
+            </label>
             <input type="time" name="start_time" value={formData.start_time} onChange={handleChange} required />
           </div>
           <div>
-            <label>所要時間 (分)*:</label>
+            <label>
+              所要時間 (分)
+            </label>
             <input type="number" name="duration_minutes" value={formData.duration_minutes} onChange={handleChange} required min={5} max={40} />
           </div>
           <div>
-            <label>最大参加者数*:</label>
+            <label>
+              最大参加者数
+            </label>
             <input type="number" name="max_participants" value={formData.max_participants} onChange={handleChange} required />
           </div>
           <div>
-            <label>開催方式*:</label>
+            <label>
+              開催方式
+            </label>
             <select name="meeting_method" value={formData.meeting_method} onChange={handleChange} required>
               <option value="オンライン">オンライン</option>
               <option value="対面">対面</option>
