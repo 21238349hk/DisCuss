@@ -13,11 +13,25 @@ import { db } from '../firebase';
 import { mockSessions, currentUser } from '../data/mockData';
 import '../styles/Dashboard.css';
 
+<<<<<<< Updated upstream
 export default function Dashboard({ onNavigate, user }) {
   const [stats, setStats] = useState([
     { label: '参加セッション数', value: '-', icon: Users, color: 'bg-blue-500' },
     { label: '今月の参加回数', value: '-', icon: Calendar, color: 'bg-green-500' },
     { label: '平均評価スコア', value: '-', icon: Trophy, color: 'bg-yellow-500' },
+=======
+export default function Dashboard({ onNavigate }) {
+  const upcomingSessions = mockSessions.filter(
+    session =>
+      session.participants.some(p => p.id === currentUser.id) &&
+      new Date(session.scheduledAt) > new Date()
+  );
+
+  const stats = [
+    { label: '参加セッション数', value: '12', icon: Users, color: 'bg-blue-500' },
+    { label: '今月の参加回数', value: '4', icon: Calendar, color: 'bg-green-500' },
+    { label: '平均評価スコア', value: '4.2', icon: Trophy, color: 'bg-yellow-500' },
+>>>>>>> Stashed changes
     { label: '成長率', value: '+15%', icon: TrendingUp, color: 'bg-purple-500' }
   ]);
 
@@ -83,7 +97,7 @@ export default function Dashboard({ onNavigate, user }) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="dashboard-header">
         <h1 className="dashboard-title">
-          おかえりなさい、{user ? user.displayName : 'ゲスト'}さん
+          おかえりなさい、{currentUser.name}さん
         </h1>
         <p className="dashboard-subtitle">
           今日も就活スキルを磨いていきましょう！

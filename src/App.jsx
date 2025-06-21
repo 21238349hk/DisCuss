@@ -6,7 +6,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import SessionList from './components/SessionList';
-import CreateSession from './components/CreateSession';  
+import CreateSession from './components/CreateSession';
 import Profile from './components/Profile';
 import Login from './components/Login';
 
@@ -15,7 +15,6 @@ import '../src/styles/App.css';
 function App() {
   const [currentPage, setCurrentPage] = useState('login');
   const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +25,6 @@ function App() {
         const docSnap = await getDoc(userDocRef);
 
         if (docSnap.exists()) {
-          setUserProfile(docSnap.data());
           setCurrentPage('dashboard');
         } else {
           console.log("プロフィールが見つかりません。作成ページに移動します。");
@@ -34,7 +32,6 @@ function App() {
         }
       } else {
         setUser(null);
-        setUserProfile(null);
         setCurrentPage('login');
       }
       setLoading(false);
@@ -44,7 +41,7 @@ function App() {
 
   const renderCurrentPage = () => {
     if (loading) {
-      return <div className="loading-screen">Loading...</div>;
+      return <div className="flex justify-center items-center h-screen">Loading...</div>;
     }
 
     if (!user) {
@@ -53,25 +50,21 @@ function App() {
 
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} user={userProfile} />;
+        return <Dashboard onNavigate={setCurrentPage} />;
       case 'sessions':
         return <SessionList onNavigate={setCurrentPage} />;
       case 'create':
-        return (
-          <div className="session-form-container">
-              <CreateSession onNavigate={setCurrentPage} />
-          </div>
-        );
+        return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':
         return <Profile onNavigate={setCurrentPage} user={user} />;
       default:
-        return <Dashboard onNavigate={setCurrentPage} user={userProfile} />;
+        return <Dashboard onNavigate={setCurrentPage} />;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {user && <Header currentPage={currentPage} onNavigate={setCurrentPage} user={user} />}
+      {user && <Header currentPage={currentPage} onNavigate={setCurrentPage} />}
       <main>
         {renderCurrentPage()}
       </main>
