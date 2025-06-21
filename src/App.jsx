@@ -52,7 +52,8 @@ function App() {
       case 'dashboard':
         return <Dashboard onNavigate={setCurrentPage} user={user} />;
       case 'sessions':
-        return <SessionList onNavigate={setCurrentPage} />;
+        return <SessionList onNavigate={setCurrentPage} user={user} />;
+
       case 'create':
         return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':
