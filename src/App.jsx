@@ -50,7 +50,7 @@ function App() {
 
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} />;
+        return <Dashboard onNavigate={setCurrentPage} user={user} />;
       case 'sessions':
         return <SessionList onNavigate={setCurrentPage} />;
       case 'create':
@@ -58,7 +58,7 @@ function App() {
       case 'profile':
         return <Profile onNavigate={setCurrentPage} user={user} />;
       default:
-        return <Dashboard onNavigate={setCurrentPage} />;
+        return <Dashboard onNavigate={setCurrentPage} user={user} />;
     }
   };
 
