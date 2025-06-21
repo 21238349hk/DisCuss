@@ -73,28 +73,32 @@ function SessionCreateForm() {
     <div>
       <h1>セッション作成</h1>
       <form onSubmit={handleSubmit}>
-        {/* 既存のフォーム要素 (ファイルアップロード欄は削除) */}
-        <div>
-          <label>セッションタイトル*:</label>
-          <input type="text" name="title" value={formData.title} onChange={handleChange} required />
+        <div type="kontena">
+          <h2>基本情報</h2>
+          {/* 既存のフォーム要素 (ファイルアップロード欄は削除) */}
+          <div>
+            <label>セッションタイトル*:</label>
+            <input type="text" name="title" value={formData.title} onChange={handleChange} required />
+          </div>
+          <div>
+            <label>セッション説明*:</label>
+            <textarea name="description" value={formData.description} onChange={handleChange} required></textarea>
+          </div>
+          <div>
+            <label>ディスカッションテーマ:</label>
+            <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} />
+          </div>
+          <div>
+            <label>難易度:</label>
+            <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
+              <option value="">選択してください</option>
+              <option value="初級">初級</option>
+              <option value="中級">中級</option>
+              <option value="上級">上級</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label>セッション説明*:</label>
-          <textarea name="description" value={formData.description} onChange={handleChange} required></textarea>
-        </div>
-        <div>
-          <label>ディスカッションテーマ:</label>
-          <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} />
-        </div>
-        <div>
-          <label>難易度:</label>
-          <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
-            <option value="">選択してください</option>
-            <option value="初級">初級</option>
-            <option value="中級">中級</option>
-            <option value="上級">上級</option>
-          </select>
-        </div>
+
         <div>
           <label>開催日*:</label>
           <input type="date" name="session_date" value={formData.session_date} onChange={handleChange} required />
