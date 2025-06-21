@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'; // 【修正】useEffectをインポート
-import { auth } from './firebase'; // 【追加】firebase.jsからauthをインポート
+import { auth, db } from './firebase'; // 【変更】dbをインポート
 import { onAuthStateChanged } from 'firebase/auth'; // 【追加】onAuthStateChangedをインポート
+import { doc, getDoc } from 'firebase/firestore'; // 【追加】Firestoreの関数をインポート
 
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
@@ -17,10 +18,21 @@ function App() {
 
   // 【追加】認証状態を監視する副作用フック
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => { // 【変更】asyncを追加
       if (currentUser) {
         setUser(currentUser);
-        setCurrentPage('dashboard');
+        // 【追加】プロフィール存在チェック
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+          // プロフィールが存在する場合、ダッシュボードへ
+          setCurrentPage('dashboard');
+        } else {
+          // プロフィールが存在しない場合、プロフィール設定ページへ
+          console.log("プロフィールが見つかりません。作成ページに移動します。");
+          setCurrentPage('profile');
+        }
       } else {
         setUser(null);
         setCurrentPage('login');
@@ -52,7 +64,7 @@ function App() {
       case 'create':
         return <CreateSession onNavigate={setCurrentPage} />;
       case 'profile':
-        return <Profile onNavigate={setCurrentPage} />;
+        return <Profile onNavigate={setCurrentPage} user={user} />; // userを渡す
       default:
         // デフォルトはダッシュボードへ
         return <Dashboard onNavigate={setCurrentPage} />;

@@ -3,20 +3,20 @@ import React from 'react';
 import { auth } from '../firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
-// 【変更】App.jsxから渡されるpropsを受け取る
+// 【変更】App.jsxから渡されるprops（onNavigate, setUser）を受け取る
 const Login = ({ onNavigate, setUser }) => {
-  // 【追加】Googleログイン処理
+  // 【追加】Googleログインを実行する関数
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
+      // signInWithPopupでGoogle認証のポップアップを表示
       const result = await signInWithPopup(auth, provider);
-      // ログイン成功後、ユーザー情報をセット
+      // ログインに成功したら、ユーザー情報をAppコンポーネントのstateに保存
       setUser(result.user);
-      // ダッシュボードへ遷移
+      // ダッシュボードへ画面遷移
       onNavigate('dashboard');
     } catch (error) {
-      console.error("Googleログインエラー:", error);
-      // エラー処理（必要に応じてUIにエラーメッセージを表示するなど）
+      console.error("Googleログイン中にエラーが発生しました:", error);
     }
   };
 
@@ -27,7 +27,7 @@ const Login = ({ onNavigate, setUser }) => {
           ログイン
         </h2>
         <button
-          onClick={handleGoogleLogin} // 【変更】クリックイベントにログイン処理を紐付け
+          onClick={handleGoogleLogin} // 【変更】クリックでhandleGoogleLogin関数を呼び出す
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           Googleでログイン
