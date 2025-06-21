@@ -121,6 +121,33 @@
   );
 }
 
+@keyframes pulseFloat {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.05);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+.stat-icon {
+  animation: pulseFloat 2.5s ease-in-out infinite;
+}
+
+@keyframes bgShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.bg-animate {
+  background: linear-gradient(135deg, #93c5fd, #bfdbfe, #60a5fa, #3b82f6);
+  background-size: 400% 400%;
+  animation: bgShift 10s ease infinite;
+}
 
 
 /* Session Grid Container */

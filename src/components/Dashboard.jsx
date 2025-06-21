@@ -99,7 +99,7 @@ export default function Dashboard({ onNavigate, user }) {
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div className="stat-content">
-              <div className={`stat-icon ${stat.color}`}>
+              <div className={`stat-icon ${stat.color} bg-animate`}>
                 <stat.icon className="icon-white" />
               </div>
               <div className="stat-text">
