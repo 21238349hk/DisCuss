@@ -1,0 +1,164 @@
+.header__right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-bar {
+  position: relative;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .search-bar {
+    display: block;
+  }
+}
+
+.search-bar__icon {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  width: 20px;
+  height: 20px;
+}
+
+.search-bar__input {
+  padding: 8px 12px 8px 2.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  width: 200px;
+}
+
+/* Header-ui.css */
+
+/* Notification Dropdown */
+.notification {
+  position: relative;
+}
+
+.notification__button {
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.notification__button:hover {
+  background-color: #f3f4f6;
+}
+
+.notification__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #6b7280;
+}
+
+.notification__badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border-radius: 9999px;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification__dropdown {
+  position: absolute;
+  right: 0;
+  top: 2.5rem;
+  width: 20rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.notification__header {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: bold;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.notification__list {
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.notification__item {
+  padding: 1rem;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.notification__item:hover {
+  background-color: #f9fafb;
+}
+
+.notification__item--unread {
+  background-color: #eff6ff;
+}
+
+.notification__title {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #111827;
+}
+
+.notification__message {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.notification__time {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.profile-button__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+.profile-button__name {
+  font-size: 0.875rem;
+  color: #4b5563;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .profile-button__name {
+    display: block;
+  }
+}
