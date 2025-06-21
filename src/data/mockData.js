@@ -48,14 +48,14 @@ export const mockSessions = [
     currentParticipants: 4,
     participants: [mockUsers[0], mockUsers[1]],
     organizer: mockUsers[0],
-    scheduledAt: '2024-03-15T14:00:00Z',
+    scheduledAt: '2024-12-25T14:00:00Z',
     duration: 90,
     location: 'online',
     zoomLink: 'https://zoom.us/j/123456789',
     status: 'recruiting',
     tags: ['金融', 'コンサル', '新規事業'],
     requirements: ['業界研究済み', 'TOEIC700点以上'],
-    createdAt: '2024-03-01'
+    createdAt: '2024-12-01'
   },
   {
     id: '2',
@@ -67,14 +67,14 @@ export const mockSessions = [
     currentParticipants: 3,
     participants: [mockUsers[1], mockUsers[2]],
     organizer: mockUsers[1],
-    scheduledAt: '2024-03-20T10:00:00Z',
+    scheduledAt: '2024-12-30T10:00:00Z',
     duration: 60,
     location: 'online',
     zoomLink: 'https://zoom.us/j/987654321',
     status: 'recruiting',
     tags: ['IT', 'DX', '初心者向け'],
     requirements: ['やる気があること'],
-    createdAt: '2024-03-05'
+    createdAt: '2024-12-05'
   },
   {
     id: '3',
@@ -86,14 +86,52 @@ export const mockSessions = [
     currentParticipants: 6,
     participants: mockUsers,
     organizer: mockUsers[2],
-    scheduledAt: '2024-03-18T16:00:00Z',
+    scheduledAt: '2024-12-28T16:00:00Z',
     duration: 120,
     location: 'offline',
     venue: '渋谷駅前会議室A',
     status: 'full',
     tags: ['商社', '海外展開', '戦略'],
     requirements: ['商社業界研究済み', '英語力中級以上'],
-    createdAt: '2024-02-28'
+    createdAt: '2024-11-28'
+  },
+  {
+    id: '4',
+    title: 'メディア業界志望者向けGD',
+    description: 'テレビ局、出版社、広告代理店を目指す方向けのグループディスカッション。',
+    theme: 'デジタルメディアの未来',
+    difficulty: 'intermediate',
+    maxParticipants: 6,
+    currentParticipants: 2,
+    participants: [],
+    organizer: mockUsers[0],
+    scheduledAt: '2024-12-27T15:00:00Z',
+    duration: 90,
+    location: 'online',
+    zoomLink: 'https://zoom.us/j/555666777',
+    status: 'recruiting',
+    tags: ['メディア', 'デジタル', 'コンテンツ'],
+    requirements: ['メディア業界に興味があること'],
+    createdAt: '2024-12-12'
+  },
+  {
+    id: '5',
+    title: '製造業界DX推進GD',
+    description: '製造業のデジタル変革について議論するグループディスカッション。',
+    theme: '工場のIoT化と効率化',
+    difficulty: 'advanced',
+    maxParticipants: 5,
+    currentParticipants: 1,
+    participants: [],
+    organizer: mockUsers[1],
+    scheduledAt: '2024-12-29T13:00:00Z',
+    duration: 120,
+    location: 'online',
+    zoomLink: 'https://zoom.us/j/888999000',
+    status: 'recruiting',
+    tags: ['製造業', 'IoT', 'DX', '効率化'],
+    requirements: ['製造業界研究済み', '技術的知識があること'],
+    createdAt: '2024-12-13'
   }
 ];
 

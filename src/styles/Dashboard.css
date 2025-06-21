@@ -301,32 +301,56 @@
 }
 
 .session-item {
+  background-color: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 1rem;
-  transition: background-color 0.2s ease;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .session-item.clickable:hover {
-  background-color: #f9fafb;
-  cursor: pointer;
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .session-item-header {
   display: flex;
   justify-content: space-between;
-  align-items: start;
-  margin-bottom: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
 }
 
 .session-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.session-content p {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.session-content p strong {
+  color: #374151;
   font-weight: 600;
-  color: #1f2937;
+  margin-right: 0.5em;
 }
 
 .participant-count {
   font-size: 0.875rem;
-  color: #6b7280;
+  font-weight: 500;
+  color: #4b5563;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  white-space: nowrap;
 }
 
 .session-description {
