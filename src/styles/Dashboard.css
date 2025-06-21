@@ -331,7 +331,7 @@
 
 .quick-action-container {
   margin-top: 2rem;
-  background: linear-gradient(to right, #2563eb, #10b981); /* from-blue-600 to-green-500 */
+  background: linear-gradient(135deg, #515253, #1e293b);
   border-radius: 1rem;
   padding: 1.5rem;
   color: white;
@@ -379,4 +379,21 @@
 
 .quick-action-button:hover {
   background-color: #f3f4f6; 
+}
+
+
+@keyframes slideUpFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUpFadeIn 0.6s ease-out forwards;
+  opacity: 0; 
 }

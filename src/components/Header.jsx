@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Bell, Search, User, Menu, X } from 'lucide-react';
 import { currentUser, mockNotifications } from '../data/mockData';
 import '../styles/Header.css';
-import '../styles/Header-ui.css';
 
 export default function Header({ currentPage, onNavigate }) {
   const [showNotifications, setShowNotifications] = useState(false);
