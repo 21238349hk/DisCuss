@@ -1,4 +1,3 @@
-
 .session-container {
   max-width: 1200px;
   margin: 2rem auto;
@@ -11,9 +10,9 @@
 .session-container h1 {
   text-align: center;
   font-size: 2rem;
-  color: #2c3e50;
+  color: #1a1a1a;
   margin-bottom: 2rem;
-  border-bottom: 2px solid #3498db;
+  border-bottom: 2px solid #1a1a1a;
   padding-bottom: 1rem;
 }
 
@@ -34,17 +33,18 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transition: all 0.2s ease;
+  min-height: 360px;
 }
 
 .session-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
-  transition: all 0.2s ease;
 }
 
 .session-item h2 {
   font-size: 1.2rem;
-  color: #34495e;
+  color: #1a1a1a;
   border-bottom: 1px solid #ddd;
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
@@ -52,17 +52,17 @@
 
 .session-item p {
   font-size: 0.95rem;
-  color: #555;
+  color: #333;
   margin-bottom: 0.4rem;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .session-item strong {
-  color: #222;
+  color: #000;
 }
 
 .session-item a {
-  color: #3498db;
+  color: #0077cc;
   text-decoration: none;
 }
 
@@ -79,46 +79,53 @@
 
 .session-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 24px;
+  justify-content: center;
 }
 
 .request-button {
   flex: 1;
-  padding: 10px 16px;
-  font-size: 0.95rem;
-  border: none;
-  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 1rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
   font-weight: 600;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #1a1a1a;
+  background-color: transparent;
+  color: #1a1a1a;
+  transition: all 0.3s ease;
 }
 
 .request-button.join {
-  background-color: #27ae60;
-  color: white;
+  background-color: #fff;
 }
 
 .request-button.join:hover {
-  background-color: #219150;
-  transform: translateY(-1px);
+  background-color: #1a1a1a;
+  color: #fff;
 }
 
-.request-button.observe {
-  background-color: #2980b9;
-  color: white;
+.request-button.observe{
+  background-color: #1a1a1a;
+  color: #fff;
 }
 
 .request-button.observe:hover {
-  background-color: #1f6696;
-  transform: translateY(-1px);
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+
 }
+
 
 
 @media (max-width: 768px) {
   .session-list {
     grid-template-columns: 1fr;
+  }
+  .session-actions {
+    flex-direction: column;
+    gap: 10px;
   }
 }
