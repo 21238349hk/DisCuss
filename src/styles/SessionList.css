@@ -1,84 +1,139 @@
-/* SessionList.css */
-
 .session-container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-family: 'Helvetica Neue', sans-serif;
+  max-width: 1200px; /* 2段組みのために幅を広げる */
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: #f0f2f5;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .session-container h1 {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 1.5rem;
   text-align: center;
+  font-size: 2rem;
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 1rem;
 }
 
 .session-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  
+  /* ★ ここから2段組みのGridレイアウト */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* 2列で表示し、アイテムが400pxより小さくならないように */
+  gap: 1.5rem; /* アイテム間の隙間 */
+  /* ★ ここまで2段組みのGridレイアウト */
 }
 
 .session-item {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e5e7eb;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.6rem;
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* margin-bottom: 1.5rem; /* Gridのgapで間隔をとるため不要 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  
+  /* アイテム内部のFlexboxレイアウトは維持 */
+  display: flex;
+  flex-direction: column; /* 縦方向のFlexboxに変更 */
+  justify-content: space-between; /* 上下端に配置 */
+  height: 100%; /* 親要素の高さに合わせる */
 }
 
 .session-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .session-item h2 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #1f2937;
+  font-size: 1.3rem;
+  color: #34495e;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px dashed #e0e0e0;
+  padding-bottom: 0.5rem;
+  width: 100%;
 }
 
 .session-item p {
-  margin: 0.25rem 0;
   font-size: 0.95rem;
-  color: #4b5563;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
 }
 
-.session-item p strong {
-  font-weight: 600;
-  color: #111827;
+.session-item strong {
+  color: #333;
 }
 
 .session-item a {
-  color: #2563eb;
-  text-decoration: underline;
+  color: #3498db;
+  text-decoration: none;
 }
 
 .session-item a:hover {
-  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* 左側のコンテンツのラッパー */
+.session-content {
+  flex-grow: 1; /* 残りのスペースを占有して、日時情報を下部に押し下げる */
+  padding-right: 0; /* 今回は不要 */
+}
+
+/* 作成・更新日時を囲むコンテナ */
+.session-meta-container {
+  flex-shrink: 0;
+  text-align: right; /* 右寄せ */
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 1rem; /* コンテンツとの間にスペース */
+  align-self: flex-end; /* コンテナ内で右下配置 */
+  width: 100%; /* 親の幅に合わせる */
 }
 
 .session-meta {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-top: 0.75rem;
-  text-align: right;
+  white-space: normal; /* 日付が改行されてもOK */
 }
 
+/* アニメーション */
+@keyframes floatAnimation {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
 
 .float-animate {
-  animation: floatUp 0.6s ease-out forwards;
-  transform: translateY(20px);
-  opacity: 0;
+  /* animation: floatAnimation 3s ease-in-out infinite; */
 }
 
-@keyframes floatUp {
-  to {
-    transform: translateY(0);
-    opacity: 1;
+/* レスポンシブ対応 */
+@media (max-width: 992px) { /* タブレットサイズ以下で1列にする */
+  .session-list {
+    grid-template-columns: 1fr; /* 1列にする */
+  }
+}
+
+@media (max-width: 768px) {
+  .session-item {
+    flex-direction: column; /* 縦並びのまま */
+    align-items: flex-start;
+  }
+
+  .session-content {
+    padding-right: 0;
+    width: 100%;
+  }
+
+  .session-meta-container {
+    width: 100%;
+    text-align: left;
+    margin-top: 1rem;
+    align-self: flex-start; /* 左下配置 */
   }
 }
