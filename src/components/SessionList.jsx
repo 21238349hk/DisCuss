@@ -91,6 +91,7 @@ function SessionList({ currentUser }) {
         requestType,
         selectedSession.id
       );
+      console.log(" selectedSession.userEmail:", selectedSession.userEmail);
 
       alert(`${requestType}申請を送信しました。`);
     } catch (err) {

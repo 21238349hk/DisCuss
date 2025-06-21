@@ -27,13 +27,13 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log(" snapshot size:", snapshot.size);
       const notifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      console.log("🔔 通知取得:", notifs); 
-      
+      console.log(" 通知取得:", notifs);
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.read).length);
     });
+
 
     return () => unsubscribe();
   }, [user]);
