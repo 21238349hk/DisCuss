@@ -12,7 +12,7 @@ import {
   where
 } from 'firebase/firestore';
 
-function SessionList({ currentUser }) {
+function SessionList({ currentUser, searchQuery }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -70,6 +70,16 @@ function SessionList({ currentUser }) {
   useEffect(() => {
     fetchSubmittedRequests();
   }, [currentUser]);
+
+  const filteredSessions = sessions.filter(session => {
+  const query = searchQuery.toLowerCase();
+  return (
+    session.title?.toLowerCase().includes(query) ||
+    session.description?.toLowerCase().includes(query) ||
+    session.discussion_theme?.toLowerCase().includes(query)
+  );
+});
+
 
   const openModal = (session, type) => {
     setSelectedSession(session);
@@ -142,7 +152,7 @@ function SessionList({ currentUser }) {
         <p>まだセッションがありません。</p>
       ) : (
         <ul className="session-list">
-          {sessions.map((session) => {
+        {filteredSessions.map((session) => {
             const requestStatus = submittedRequests[session.id];
             return (
               <li key={session.id} className="session-item float-animate">
