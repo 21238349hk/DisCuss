@@ -11,7 +11,9 @@ import {
   getDocs,
   where,
   setDoc,
-  doc
+  doc,
+  updateDoc,
+  increment
 } from 'firebase/firestore';
 
 function SessionList({ currentUser, searchQuery }) {
@@ -146,6 +148,12 @@ function SessionList({ currentUser, searchQuery }) {
         selectedSession.id,
         currentUser.uid
       );
+
+      // ユーザーデータに申請セッションを記録
+      const userStatsRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userStatsRef, {
+        'stats.joinedSessions': increment(1)
+      });
 
       await fetchSubmittedRequests();
       alert(`${requestType}申請を送信しました。`);
