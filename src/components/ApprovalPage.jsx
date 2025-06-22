@@ -22,6 +22,9 @@ export default function ApprovalPage({ user }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [userProfile, setUserProfile] = useState(null); 
 
+  console.log("✅ URLから取得した sessionId:", sessionId);
+  console.log("✅ URLから取得した requesterId:", requesterId);
+
   useEffect(() => {
     if (!user || !user.uid) {
       setUserProfile(null); 
@@ -58,7 +61,8 @@ export default function ApprovalPage({ user }) {
         const sessionDocRef = doc(db, 'sessions', sessionId);
         const requesterUserDocRef = doc(db, 'users', requesterId);
         const notificationDocRef = doc(db, 'notifications', `${sessionId}_${requesterId}`); 
-        console.log("通知ドキュメント参照:", notificationDocRef.path); 
+        console.log("✅ 通知ドキュメント参照:", notificationDocRef.path); 
+
         const [sessionSnap, requesterUserSnap, notificationSnap] = await Promise.all([
           getDoc(sessionDocRef),
           getDoc(requesterUserDocRef),
@@ -66,6 +70,7 @@ export default function ApprovalPage({ user }) {
         ]);
 
         if (sessionSnap.exists()) {
+          console.log("✅ セッション情報取得成功:", sessionSnap.data());
           setSession(sessionSnap.data());
         } else {
           setError('セッション情報が見つかりません。');
@@ -73,14 +78,18 @@ export default function ApprovalPage({ user }) {
         }
 
         if (requesterUserSnap.exists()) {
+          console.log("✅ 申請者プロフィール取得成功:", requesterUserSnap.data());
           setProfile(requesterUserSnap.data());
         } else {
+          console.warn("⚠️ 申請者プロフィールが見つかりません。requesterId:", requesterId);
           setError(prev => prev ? prev + ' 申請者プロフィールが見つかりません。' : '申請者プロフィールが見つかりません。');
           return; 
         }
 
         if (!notificationSnap.exists()) {
-          console.warn("対応する通知ドキュメントが見つかりません。メール通知ができない可能性があります。");
+          console.warn("⚠️ 通知ドキュメントが見つかりません:", notificationDocRef.path);
+        } else {
+          console.log("✅ 通知ドキュメント取得成功:", notificationSnap.data());
         }
 
       } catch (err) {
@@ -102,12 +111,7 @@ export default function ApprovalPage({ user }) {
     decisionType,         
     targetOwnerEmail      
   ) => {
-    let templateId;
-    if (decisionType === 'approved') {
-      templateId = 'template_wmkriqn'; // 承認用テンプレートID
-    } else {
-      templateId = 'template_wmkriqn'; // 拒否用テンプレートID
-    }
+    let templateId = 'template_wmkriqn';
 
     try {
       await emailjs.send(
@@ -125,9 +129,9 @@ export default function ApprovalPage({ user }) {
         },
         '7fDpG5aIjSV3qnE5F' 
       );
-      console.log(`申請者へのメール送信成功 (${decisionType}通知)！`);
+      console.log(`📤 申請者へのメール送信成功 (${decisionType})`);
     } catch (err) {
-      console.error(`申請者へのメール送信エラー (${decisionType}通知):`, err);
+      console.error(`❌ メール送信エラー (${decisionType}):`, err);
     }
   };
 
@@ -140,17 +144,28 @@ export default function ApprovalPage({ user }) {
     try {
       const notificationRef = doc(db, 'notifications', `${sessionId}_${requesterId}`);
       const notifDoc = await getDoc(notificationRef);
+      console.log("📦 通知データ取得:", notifDoc.exists());
 
       if (notifDoc.exists()) {
         const notificationData = notifDoc.data();
+        console.log("✅ 通知データ内容:", notificationData);
 
         await updateDoc(notifDoc.ref, { status: decision });
         setStatus(`申請を「${decision === 'approved' ? '承認' : '拒否'}」に更新しました。`);
 
         if (notificationData.requesterEmail && notificationData.type && session.userEmail) {
+          console.log("📤 メール送信対象:", {
+            requesterEmail: notificationData.requesterEmail,
+            requesterName: profile.displayName,
+            sessionTitle: session.title,
+            sessionDate: session.session_datetime.toDate().toLocaleString('ja-JP'),
+            type: notificationData.type,
+            ownerEmail: session.userEmail
+          });
+
           await sendEmailToApplicant(
             notificationData.requesterEmail,
-            profile.name || notificationData.requesterEmail, 
+            profile.displayName || notificationData.requesterEmail, 
             session.title,
             new Date(session.session_datetime.toDate()).toLocaleString('ja-JP'),
             notificationData.type, 
@@ -158,7 +173,7 @@ export default function ApprovalPage({ user }) {
             session.userEmail 
           );
         } else {
-          console.warn("メール送信に必要な情報（申請者メール、申請タイプ、オーナーメール）が不足しています。");
+          console.warn("⚠️ メール送信に必要な情報が不足しています");
           setStatus(prev => prev + ' (メールは送信されませんでした)');
         }
 
@@ -166,12 +181,11 @@ export default function ApprovalPage({ user }) {
         setStatus('エラー: 対応する申請ドキュメントが見つかりませんでした。申請IDが正しいか確認してください。');
       }
     } catch (err) {
-      console.error("申請ステータス更新またはメール送信エラー:", err);
+      console.error("❌ ステータス更新またはメール送信エラー:", err);
       setStatus('申請ステータスの更新に失敗しました。詳細はコンソールを確認してください。');
     }
   };
 
-  // HeaderのonNavigateプロップ用の関数
   const handleNavigate = (key) => {
     if (key === 'dashboard') navigate('/');
     else if (key === 'sessions') navigate('/sessions');
@@ -180,7 +194,6 @@ export default function ApprovalPage({ user }) {
     else if (key === 'ai-chat') navigate('/ai-chat'); 
   };
 
-  // ローディング中の表示
   if (loading) {
     return (
       <>
@@ -246,17 +259,24 @@ export default function ApprovalPage({ user }) {
           <p><strong>タイトル:</strong> {session.title}</p>
           <p><strong>開催日:</strong> {new Date(session.session_datetime.toDate()).toLocaleString('ja-JP')}</p>
         </div>
+
         <div className="section-card">
           <h2>申請者プロフィール</h2>
-          <p><strong>名前:</strong> {profile.name || 'N/A'}</p>
-          <p><strong>所属:</strong> {profile.affiliation || 'N/A'}</p>
-          <p><strong>自己紹介:</strong> {profile.bio || 'N/A'}</p>
+          <p><strong>氏名:</strong> {profile.displayName || 'N/A'}</p>
+          <p><strong>大学:</strong> {profile.university || 'N/A'}</p>
+          <p><strong>専攻:</strong> {profile.major || profile.department || 'N/A'}</p>
         </div>
+
         <div className="decision-buttons">
           <button className="approve" onClick={() => handleDecision('approved')}>承認</button>
           <button className="reject" onClick={() => handleDecision('rejected')}>拒否</button>
         </div>
-        {status && <p className={`status-message ${status.includes('失敗') || status.includes('エラー') ? 'error' : ''}`}>{status}</p>}
+
+        {status && (
+          <p className={`status-message ${status.includes('失敗') || status.includes('エラー') ? 'error' : ''}`}>
+            {status}
+          </p>
+        )}
       </div>
     </>
   );

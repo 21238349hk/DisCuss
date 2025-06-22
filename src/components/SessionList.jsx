@@ -114,13 +114,11 @@ function SessionList({ currentUser, searchQuery }) {
         type: requestType,
         timestamp: new Date(),
         sessionTitle: selectedSession.title,
-        requesterId: currentUser.uid || 'anonymous',
-        requesterEmail: currentUser.email || 'anonymous@example.com',
-        status: 'pending', // 初期ステータスは 'pending'
-        userEmail: selectedSession.userEmail // セッションオーナーのメールアドレス
+        requesterId: currentUser.uid,
+        requesterEmail: currentUser.email,
+        status: 'pending',
+        userEmail: selectedSession.userEmail
       });
-
-      // メール送信時に、上記で作成したドキュメントの ID を渡す
       await sendEmailToOwner(
         selectedSession.userEmail,
         selectedSession.title,
