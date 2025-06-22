@@ -4,8 +4,8 @@ import {
   Edit2, Mail, CaseSensitive as University, GraduationCap, Target, Star,
   Award, Calendar, TrendingUp, Users
 } from 'lucide-react';
-import { db } from '../firebase';
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase-config'; // firebase.js ではなく firebase-config.js を推奨
+import { doc, getDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
 
 export default function Profile({ onNavigate, user }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -17,9 +17,9 @@ export default function Profile({ onNavigate, user }) {
 
   const [stats, setStats] = useState([
     { label: '参加セッション数', value: '-', icon: Calendar },
-    { label: '平均評価', value: '-', icon: Star },
     { label: '作成セッション数', value: '-', icon: Award },
-    { label: '成長スコア', value: '-', icon: TrendingUp }
+    { label: '申請セッション数', value: '-', icon: Star },
+    { label: '平均評価', value: '-', icon: TrendingUp }
   ]);
 
   const industryOptions = [
@@ -47,18 +47,26 @@ export default function Profile({ onNavigate, user }) {
     if (!user) return;
     const fetchStats = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'sessions'));
+        const sessionsSnapshot = await getDocs(collection(db, 'sessions'));
         let joined = 0;
         let created = 0;
         let scores = [];
 
-        snapshot.forEach((doc) => {
+        sessionsSnapshot.forEach((doc) => {
           const data = doc.data();
           if (data.participants?.includes(user.uid)) joined++;
-          if (data.createdBy === user.uid) created++; // 🔁 修正済
+          if (data.createdBy === user.uid) created++;
           const score = data.evaluations?.[user.uid];
           if (typeof score === 'number') scores.push(score);
         });
+
+        // ★追加: 申請セッション数を取得
+        const notificationsQuery = query(
+          collection(db, 'notifications'),
+          where('requesterId', '==', user.uid)
+        );
+        const notificationsSnapshot = await getDocs(notificationsQuery);
+        const appliedSessionsCount = notificationsSnapshot.size; // 申請ドキュメントの数
 
         const avgScore = scores.length > 0
           ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
@@ -66,9 +74,9 @@ export default function Profile({ onNavigate, user }) {
 
         setStats([
           { label: '参加セッション数', value: String(joined), icon: Calendar },
-          { label: '平均評価', value: String(avgScore), icon: Star },
           { label: '作成セッション数', value: String(created), icon: Award },
-          { label: '成長スコア', value: '+18%', icon: TrendingUp }
+          { label: '申請セッション数', value: String(appliedSessionsCount), icon: Star }, // ★修正: ここに申請数を設定
+          { label: '平均評価', value: avgScore, icon: TrendingUp } // 平均評価は既存のスコアから
         ]);
       } catch (err) {
         console.error("統計取得エラー:", err);
@@ -88,18 +96,26 @@ export default function Profile({ onNavigate, user }) {
     try {
       const docRef = doc(db, 'users', user.uid);
 
-      const snapshot = await getDocs(collection(db, 'sessions'));
+      // 保存時に最新の統計情報を取得して保存する
+      const sessionsSnapshot = await getDocs(collection(db, 'sessions'));
       let joined = 0;
       let created = 0;
       let scores = [];
 
-      snapshot.forEach((doc) => {
+      sessionsSnapshot.forEach((doc) => {
         const data = doc.data();
         if (data.participants?.includes(user.uid)) joined++;
-        if (data.createdBy === user.uid) created++; // 🔁 修正済
+        if (data.createdBy === user.uid) created++;
         const score = data.evaluations?.[user.uid];
         if (typeof score === 'number') scores.push(score);
       });
+
+      const notificationsQuery = query(
+        collection(db, 'notifications'),
+        where('requesterId', '==', user.uid)
+      );
+      const notificationsSnapshot = await getDocs(notificationsQuery);
+      const appliedSessionsCount = notificationsSnapshot.size;
 
       const avgScore = scores.length > 0
         ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
@@ -110,6 +126,7 @@ export default function Profile({ onNavigate, user }) {
         stats: {
           joinedSessions: joined,
           createdSessions: created,
+          appliedSessions: appliedSessionsCount, // ★追加: appliedSessions も保存
           avgEvaluation: avgScore
         }
       }, { merge: true });

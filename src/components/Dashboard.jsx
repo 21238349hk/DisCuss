@@ -8,9 +8,8 @@ import {
   MapPin,
   Video
 } from 'lucide-react';
-import { getDocs, collection, query, orderBy, limit, addDoc } from 'firebase/firestore';
+import { getDocs, collection, query, orderBy, limit, addDoc,where } from 'firebase/firestore';
 import { db } from '../firebase-config';
-import { mockSessions } from '../data/mockData';
 import emailjs from 'emailjs-com';
 import '../styles/Dashboard.css';
 import '../styles/SessionList.css';
@@ -18,9 +17,9 @@ import '../styles/SessionList.css';
 export default function Dashboard({ onNavigate, user }) {
   const [stats, setStats] = useState([
     { label: '参加セッション数', value: '-', icon: Users, color: 'bg-blue-500' },
-    { label: '今月の参加回数', value: '-', icon: Calendar, color: 'bg-green-500' },
-    { label: '平均評価スコア', value: '-', icon: Trophy, color: 'bg-yellow-500' },
-    { label: '成長率', value: '+15%', icon: TrendingUp, color: 'bg-purple-500' }
+    { label: '作成セッション数', value: '-', icon: Trophy, color: 'bg-yellow-500' },
+    { label: '申請セッション数', value: '-', icon: Calendar, color: 'bg-green-500' },
+    { label: '平均評価', value: '99.9', icon: TrendingUp, color: 'bg-purple-500' }
   ]);
 
   const [appliedSessions, setAppliedSessions] = useState([]);
@@ -37,29 +36,49 @@ export default function Dashboard({ onNavigate, user }) {
 
     const fetchData = async () => {
       try {
-        // 左側：モックデータから申請予定のセッションを取得
-        const applied = mockSessions
-          .filter(session => session.participants.length > 0)
-          .map(session => ({
-            ...session,
-            userEmail: session.organizer.email,
-            discussion_theme: session.theme,
-            duration_minutes: session.duration,
-            max_participants: session.maxParticipants,
-            meeting_method: session.location === 'online' ? 'オンライン' : 'オフライン',
-            participants: { length: session.currentParticipants },
-            session_datetime: { toDate: () => new Date(session.scheduledAt) }
-          }));
-        setAppliedSessions(applied);
-        
-        // 統計データの更新 (モックデータ基準)
-        const joined = applied.length;
-        const thisMonth = applied.length;
+        const sessionsCollectionRef = collection(db, 'sessions');
+        const notificationsCollectionRef = collection(db, 'notifications');
+
+        // ★ 統計情報の計算 (Firebaseから取得したデータに基づく)
+        let joinedCount = 0; // 参加セッション数
+        let createdCount = 0; // 作成セッション数
+        let evaluationScores = []; // 評価スコア
+
+        const allSessionsSnapshot = await getDocs(sessionsCollectionRef);
+        allSessionsSnapshot.forEach((doc) => {
+          const data = doc.data();
+          // 参加セッション数を計算
+          if (data.participants && data.participants.includes(user.uid)) {
+            joinedCount++;
+          }
+          // 作成セッション数を計算
+          if (data.createdBy === user.uid) {
+            createdCount++;
+          }
+          // 評価スコアを収集
+          const score = data.evaluations?.[user.uid];
+          if (typeof score === 'number') {
+            evaluationScores.push(score);
+          }
+        });
+
+        // 申請セッション数を取得
+        const notificationsQuery = query(
+          notificationsCollectionRef,
+          where('requesterId', '==', user.uid)
+        );
+        const notificationsSnapshot = await getDocs(notificationsQuery);
+        const appliedSessionsCount = notificationsSnapshot.size;
+
+        // 平均評価を計算
+        const avgScore = evaluationScores.length > 0
+          ? (evaluationScores.reduce((a, b) => a + b, 0) / evaluationScores.length).toFixed(1)
+          : '-';
         setStats([
-          { label: '参加セッション数', value: String(joined), icon: Users, color: 'bg-blue-500' },
-          { label: '今月の参加回数', value: String(thisMonth), icon: Calendar, color: 'bg-green-500' },
-          { label: '平均評価スコア', value: '4.2', icon: Trophy, color: 'bg-yellow-500' },
-          { label: '成長率', value: '+15%', icon: TrendingUp, color: 'bg-purple-500' }
+          { label: '参加セッション数', value: String(joinedCount), icon: Users, color: 'bg-blue-500' },
+          { label: '作成セッション数', value: String(createdCount), icon: Trophy, color: 'bg-yellow-500' },
+          { label: '申請セッション数', value: String(appliedSessionsCount), icon: Calendar, color: 'bg-green-500' },
+          { label: '平均評価', value: '99.9', icon: TrendingUp, color: 'bg-purple-500' }
         ]);
 
         // 右側：Firebaseから新しいセッションを2件取得

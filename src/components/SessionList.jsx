@@ -72,7 +72,6 @@ function SessionList({ currentUser }) {
     setRequestType(type);
     setShowModal(true);
   };
-
   const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type, sessionId, requesterId) => {
     const approvalUrl = `https://gd-tanyao.web.app/approval?sessionId=${sessionId}&requesterId=${requesterId}`;
 
@@ -95,15 +94,16 @@ function SessionList({ currentUser }) {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'notifications'), {
+      // notifications コレクションにドキュメントを追加し、その ID を取得
+      const docRef = await addDoc(collection(db, 'notifications'), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
         sessionTitle: selectedSession.title,
         requesterId: currentUser.uid || 'anonymous',
         requesterEmail: currentUser.email || 'anonymous@example.com',
-        status: 'pending',
-        userEmail: selectedSession.userEmail
+        status: 'pending', // 初期ステータスは 'pending'
+        userEmail: selectedSession.userEmail // セッションオーナーのメールアドレス
       });
 
       await sendEmailToOwner(
@@ -111,8 +111,7 @@ function SessionList({ currentUser }) {
         selectedSession.title,
         currentUser.email || 'anonymous@example.com',
         requestType,
-        selectedSession.id,
-        currentUser.uid || 'anonymous'
+        docRef.id
       );
 
       await fetchSubmittedRequests();
@@ -160,9 +159,6 @@ function SessionList({ currentUser }) {
                       <button className="request-button joined" disabled>
                         {requestStatus}申請済み
                       </button>
-                      {/* <button className="request-button cancel" disabled>
-                        キャンセル予定
-                      </button> */}
                     </>
                   ) : (
                     <>
