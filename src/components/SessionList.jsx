@@ -22,6 +22,10 @@ function SessionList({ currentUser }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRequests, setSubmittedRequests] = useState({});
 
+  console.log("ApprovalPage loaded.");
+  // console.log("sessionId from URL:", sessionId);
+  // console.log("requesterId from URL:", requesterId);
+
   useEffect(() => {
     const q = query(collection(db, 'sessions'), orderBy('session_datetime', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
