@@ -94,13 +94,13 @@ export default function ApprovalPage({ user }) {
   }, [sessionId, requesterId]); 
 
     const sendEmailToApplicant = async (
-    targetRequesterEmail,
-    targetRequesterName,
-    targetSessionTitle,
-    targetSessionDate,
-    targetRequestType,
-    decisionType,
-    targetOwnerEmail
+        targetRequesterEmail,
+        targetRequesterName,
+        targetSessionTitle,
+        targetSessionDate,
+        targetRequestType,
+        decisionType,
+        targetOwnerEmail
     ) => {
     const approvedTemplateId = 'template_wntd5x9';   
     const rejectedTemplateId = 'template_xlcz1vf'; 
@@ -146,32 +146,26 @@ export default function ApprovalPage({ user }) {
         setStatus(`申請を「${decision === 'approved' ? '承認' : '拒否'}」に更新しました。`);
 
         if (notificationData.requesterEmail && notificationData.type && session.userEmail) {
-          console.log("メール送信対象:", {
-            requesterEmail: notificationData.requesterEmail,
-            requesterName: profile.displayName,
-            sessionTitle: session.title,
-            sessionDate: session.session_datetime.toDate().toLocaleString('ja-JP'),
-            type: notificationData.type,
-            ownerEmail: session.userEmail
-          });
-
-          await sendEmailToApplicant(
+            await sendEmailToApplicant(
             notificationData.requesterEmail,
-            profile.displayName || notificationData.requesterEmail, 
+            profile.displayName || notificationData.requesterEmail,
             session.title,
             new Date(session.session_datetime.toDate()).toLocaleString('ja-JP'),
-            notificationData.type, 
-            decision, 
-            session.userEmail 
-          );
-        } else {
-          console.warn("メール送信に必要な情報が不足しています");
-          setStatus(prev => prev + ' (メールは送信されませんでした)');
+            notificationData.type,
+            decision,
+            session.userEmail
+            );
         }
 
-      } else {
+        if (decision === 'approved') {
+            setStatus('承認されました。ダッシュボードに移動します...');
+            setTimeout(() => navigate('/'), 2000);
+        }
+
+        } else {
         setStatus('エラー: 対応する申請ドキュメントが見つかりませんでした。申請IDが正しいか確認してください。');
-      }
+        }
+
     } catch (err) {
       console.error("ステータス更新またはメール送信エラー:", err);
       setStatus('申請ステータスの更新に失敗しました。詳細はコンソールを確認してください。');
