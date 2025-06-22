@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase-config';
 import '../styles/SessionList.css';
 import emailjs from 'emailjs-com';
-import { setDoc, doc } from 'firebase/firestore';
 
 import {
   collection,
   query,
   orderBy,
   onSnapshot,
-  addDoc,
   getDocs,
-  where
+  where,
+  setDoc,         
+  doc             
 } from 'firebase/firestore';
+
 
 function SessionList({ currentUser, searchQuery }) {
   const [sessions, setSessions] = useState([]);
