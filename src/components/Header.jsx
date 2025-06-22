@@ -15,9 +15,13 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
     { name: 'ダッシュボード', key: 'dashboard' },
     { name: 'セッション一覧', key: 'sessions' },
     { name: 'セッション作成', key: 'create' },
+    { name: 'AI相談/GD', key: 'ai-chat' },
     { name: 'プロフィール', key: 'profile' },
+<<<<<<< HEAD
     { name: 'AI相談', key: 'ai-chat' },
     { name: 'AI相談(Firebase)', key: 'ai-chat-firebase' }
+=======
+>>>>>>> 4d6607a251a66138549cc8f51eb9b850dab7b0f4
   ];
 
   useEffect(() => {

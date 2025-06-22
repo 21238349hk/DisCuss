@@ -1,7 +1,7 @@
 .ai-chat-container {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 3rem auto;
-  padding: 2rem;
+  padding: 2.5rem;
   background-color: white;
   border-radius: 0.75rem;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -22,25 +22,53 @@
   border-radius: 0.5rem;
   background-color: #f9fafb;
   padding: 1rem;
-  height: 300px;
+  height: 400px;
   overflow-y: auto;
   margin-bottom: 1.5rem;
 }
 
-.chat-message {
-  margin-bottom: 1rem;
+
+.chat-row {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.chat-row.user {
+  justify-content: flex-end;
+}
+
+.chat-row.ai {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.chat-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.chat-bubble {
+  max-width: 70%;
+  padding: 0.6rem 1rem;
+  border-radius: 1rem;
   font-size: 0.95rem;
   line-height: 1.4;
 }
 
-.chat-message.user {
-  text-align: right;
-  color: #1f2937;
+.chat-bubble.user {
+  background-color:  #6b7280;; 
+  color: #ffffff;
+  border-top-right-radius: 0;
 }
 
-.chat-message.ai {
-  text-align: left;
-  color: #374151;
+.chat-bubble.ai {
+  background-color: #f1f0f0;
+  color: #000;
+  border-top-left-radius: 0;
 }
 
 .chat-input {
@@ -51,6 +79,7 @@
 
 .chat-input input {
   flex: 1;
+  height: 100%;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   border: 1px solid #d1d5db;
@@ -59,7 +88,8 @@
 }
 
 .chat-input button {
-  background-color: black;
+  background-color:#6b7280;
+  height: 100%;
   color: white;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
@@ -68,6 +98,7 @@
   border-radius: 0.375rem;
   cursor: pointer;
   transition: background-color 0.3s;
+  height: 48px;
 }
 
 .chat-input button:hover {
@@ -85,4 +116,71 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.ai-chat-header {
+  display: flex;
+  justify-content: center;     /* タイトルを中央に */
+  align-items: center;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.chat-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 auto; /* タイトル中央寄せのため */
+}
+
+/* モード切替ボタンを右に */
+.aigd-mode-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #4b5563;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s ease;
+}
+
+
+.aigd-mode-button:hover {
+  color: #000;
+}
+
+/* AI1のスタイル */
+.chat-row.ai1 {
+  justify-content: flex-start;
+}
+
+.chat-bubble.ai1 {
+  background-color: #d1e8ff; /* 青系 */
+  color: #000;
+  border-top-left-radius: 0;
+}
+
+/* AI2のスタイル */
+.chat-row.ai2 {
+  justify-content: flex-start;
+}
+
+.chat-bubble.ai2 {
+  background-color: #ffe4cc; /* オレンジ系 */
+  color: #000;
+  border-top-left-radius: 0;
+}
+
+.chat-row.ai1,
+.chat-row.ai2 {
+  align-items: flex-start;
+}
+
+.chat-avatar {
+  align-self: flex-start;
+  margin-top: 0;
 }

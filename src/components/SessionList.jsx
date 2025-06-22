@@ -2,17 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase-config';
 import '../styles/SessionList.css';
 import emailjs from 'emailjs-com';
+
 import {
   collection,
   query,
   orderBy,
   onSnapshot,
-  addDoc,
   getDocs,
-  where
+  where,
+  setDoc,
+  doc,
+  updateDoc,
+  increment
 } from 'firebase/firestore';
 
-function SessionList({ currentUser }) {
+function SessionList({ currentUser, searchQuery }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,6 +25,7 @@ function SessionList({ currentUser }) {
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRequests, setSubmittedRequests] = useState({});
+  const [approvedCounts, setApprovedCounts] = useState({});
 
   useEffect(() => {
     const q = query(collection(db, 'sessions'), orderBy('session_datetime', 'asc'));
@@ -48,6 +53,25 @@ function SessionList({ currentUser }) {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const fetchApprovedCounts = async () => {
+      const notifQuery = query(
+        collection(db, 'notifications'),
+        where('status', '==', 'approved')
+      );
+      const snapshot = await getDocs(notifQuery);
+      const counts = {};
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.type === '参加') {
+          counts[data.sessionId] = (counts[data.sessionId] || 0) + 1;
+        }
+      });
+      setApprovedCounts(counts);
+    };
+    fetchApprovedCounts();
+  }, []);
+
   const fetchSubmittedRequests = async () => {
     if (!currentUser) return;
     const notifQuery = query(
@@ -58,7 +82,7 @@ function SessionList({ currentUser }) {
     const requestsMap = {};
     notifSnapshot.forEach((doc) => {
       const data = doc.data();
-      requestsMap[data.sessionId] = data.type; // "参加" or "見学"
+      requestsMap[data.sessionId] = data.type;
     });
     setSubmittedRequests(requestsMap);
   };
@@ -66,6 +90,15 @@ function SessionList({ currentUser }) {
   useEffect(() => {
     fetchSubmittedRequests();
   }, [currentUser]);
+
+  const filteredSessions = sessions.filter(session => {
+    const query = searchQuery.toLowerCase();
+    return (
+      session.title?.toLowerCase().includes(query) ||
+      session.description?.toLowerCase().includes(query) ||
+      session.discussion_theme?.toLowerCase().includes(query)
+    );
+  });
 
   const openModal = (session, type) => {
     setSelectedSession(session);
@@ -92,16 +125,17 @@ function SessionList({ currentUser }) {
 
   const handleConfirm = async () => {
     if (!selectedSession || !currentUser) return;
-
     setIsSubmitting(true);
+    const notificationId = `${selectedSession.id}_${currentUser.uid}`;
+
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await setDoc(doc(db, 'notifications', notificationId), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
         sessionTitle: selectedSession.title,
-        requesterId: currentUser.uid || 'anonymous',
-        requesterEmail: currentUser.email || 'anonymous@example.com',
+        requesterId: currentUser.uid,
+        requesterEmail: currentUser.email,
         status: 'pending',
         userEmail: selectedSession.userEmail
       });
@@ -109,11 +143,17 @@ function SessionList({ currentUser }) {
       await sendEmailToOwner(
         selectedSession.userEmail,
         selectedSession.title,
-        currentUser.email || 'anonymous@example.com',
+        currentUser.email,
         requestType,
         selectedSession.id,
-        currentUser.uid || 'anonymous'
+        currentUser.uid
       );
+
+      // ユーザーデータに申請セッションを記録
+      const userStatsRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userStatsRef, {
+        'stats.joinedSessions': increment(1)
+      });
 
       await fetchSubmittedRequests();
       alert(`${requestType}申請を送信しました。`);
@@ -138,7 +178,7 @@ function SessionList({ currentUser }) {
         <p>まだセッションがありません。</p>
       ) : (
         <ul className="session-list">
-          {sessions.map((session) => {
+          {filteredSessions.map((session) => {
             const requestStatus = submittedRequests[session.id];
             return (
               <li key={session.id} className="session-item float-animate">
@@ -151,19 +191,15 @@ function SessionList({ currentUser }) {
                   <p><strong>開始時間:</strong> {session.start_time}</p>
                   <p><strong>所要時間:</strong> {session.duration_minutes}分</p>
                   <p><strong>最大参加者数:</strong> {session.max_participants}人</p>
+                  <p><strong>参加承認済数:</strong> {approvedCounts[session.id] || 0}人</p>
                   <p><strong>開催方式:</strong> {session.meeting_method}</p>
                 </div>
 
                 <div className="session-actions">
                   {requestStatus ? (
-                    <>
-                      <button className="request-button joined" disabled>
-                        {requestStatus}申請済み
-                      </button>
-                      {/* <button className="request-button cancel" disabled>
-                        キャンセル予定
-                      </button> */}
-                    </>
+                    <button className="request-button joined" disabled>
+                      {requestStatus}申請済み
+                    </button>
                   ) : (
                     <>
                       <button className="request-button join" onClick={() => openModal(session, '参加')}>
