@@ -56,7 +56,7 @@ export default function AIChatPage() {
   return (
     <div className="ai-chat-container">
       <div className="ai-chat-header">
-        <h2 className="chat-title">{mode === 'gd' ? 'AIGDチャット' : 'AI相談チャット'}</h2>
+        <h2 className="chat-title">{mode === 'gd' ? 'AIGD' : 'AI相談'}</h2>
         <button className="aigd-mode" onClick={handleModeToggle}>
           {mode === 'gd' ? '相談モードに切替' : 'AIGDモードに切替'}
         </button>

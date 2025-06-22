@@ -15,7 +15,7 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
     { name: 'ダッシュボード', key: 'dashboard' },
     { name: 'セッション一覧', key: 'sessions' },
     { name: 'セッション作成', key: 'create' },
-    { name: 'AI相談', key: 'ai-chat' },
+    { name: 'AI相談/GD', key: 'ai-chat' },
     { name: 'プロフィール', key: 'profile' },
   ];
 
