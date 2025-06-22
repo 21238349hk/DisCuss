@@ -10,13 +10,16 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-
   const navigation = [
     { name: 'ダッシュボード', key: 'dashboard' },
     { name: 'セッション一覧', key: 'sessions' },
     { name: 'セッション作成', key: 'create' },
     { name: 'AI相談/GD', key: 'ai-chat' },
+<<<<<<< Updated upstream
     { name: 'プロフィール', key: 'profile' },
+=======
+    { name: 'プロフィール', key: 'profile' }
+>>>>>>> Stashed changes
   ];
 
   useEffect(() => {

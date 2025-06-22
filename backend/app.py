@@ -4,18 +4,33 @@ import base64
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 # .envファイルから環境変数を読み込む
 load_dotenv()
 
 app = Flask(__name__)
-# フロントエンドからのリクエストを許可する
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
+# フロントエンドからのリクエストを許可する（ポート5174も追加）
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174"
+        ]
+    }
+})
 
 # Zoom APIの新しい認証情報
 ZOOM_CLIENT_ID = os.getenv("ZOOM_CLIENT_ID")
 ZOOM_CLIENT_SECRET = os.getenv("ZOOM_CLIENT_SECRET")
 ZOOM_ACCOUNT_ID = os.getenv("ZOOM_ACCOUNT_ID")
+
+# Gemini API設定
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 def get_zoom_access_token():
     """Zoom APIのServer-to-Server OAuthアクセストークンを取得する"""
@@ -37,6 +52,34 @@ def get_zoom_access_token():
 @app.route('/')
 def hello_world():
     return 'Hello from DisCuss Backend!'
+
+@app.route('/api/ask-gemini', methods=['POST'])
+def ask_gemini():
+    """Gemini APIを使用してAIチャットを処理するエンドポイント"""
+    try:
+        if not GEMINI_API_KEY:
+            return jsonify({"error": "Gemini APIキーが設定されていません"}), 500
+
+        data = request.json
+        message = data.get('message', '')
+        
+        if not message:
+            return jsonify({"error": "メッセージが提供されていません"}), 400
+
+        # Gemini APIを呼び出し
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt = f"""あなたは就活中の学生に対して、グループディスカッション（GD）対策の相談に答えるAIです。企業がGDで何を見ているのか、面接との違いなどを、やさしく・実践的にアドバイスしてください。文字数は多くならないように気をつけてください
+
+{message}"""
+        
+        response = model.generate_content(prompt)
+        reply = response.text
+
+        return jsonify({"reply": reply})
+
+    except Exception as e:
+        print(f"Gemini APIエラー: {e}")
+        return jsonify({"error": f"Gemini API呼び出しに失敗しました: {str(e)}"}), 500
 
 @app.route('/api/create-zoom-meeting', methods=['POST'])
 def create_zoom_meeting():
