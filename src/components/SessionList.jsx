@@ -113,11 +113,12 @@ function SessionList({ currentUser, searchQuery }) {
         type: requestType,
         timestamp: new Date(),
         sessionTitle: selectedSession.title,
-        requesterId: currentUser.uid || 'anonymous',
-        requesterEmail: currentUser.email || 'anonymous@example.com',
-        status: 'pending', // 初期ステータスは 'pending'
-        userEmail: selectedSession.userEmail // セッションオーナーのメールアドレス
+        requesterId: currentUser.uid,
+        requesterEmail: currentUser.email,
+        status: 'pending',
+        userEmail: selectedSession.userEmail
       });
+
 
       await sendEmailToOwner(
         selectedSession.userEmail,

@@ -264,8 +264,7 @@ export default function ApprovalPage({ user }) {
           <h2>申請者プロフィール</h2>
           <p><strong>氏名:</strong> {profile.displayName || 'N/A'}</p>
           <p><strong>大学:</strong> {profile.university || 'N/A'}</p>
-          <p><strong>専攻:</strong> {profile.faculty || profile.department || 'N/A'}</p>
-          <p><strong>自己紹介:</strong> {profile.bio || 'N/A'}</p>
+          <p><strong>専攻:</strong> {profile.major || profile.department || 'N/A'}</p>
         </div>
 
         <div className="decision-buttons">
