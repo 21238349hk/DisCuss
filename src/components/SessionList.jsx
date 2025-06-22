@@ -107,23 +107,23 @@ function SessionList({ currentUser, searchQuery }) {
     if (!selectedSession || !currentUser) return;
 
     setIsSubmitting(true);
-    const notificationId = `${selectedSession.id}_${currentUser.uid}`; 
-
     try {
       const docRef = await addDoc(collection(db, 'notifications'), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
         sessionTitle: selectedSession.title,
-        requesterId: currentUser.uid,
-        requesterEmail: currentUser.email,
-        status: 'pending',
-        userEmail: selectedSession.userEmail
+        requesterId: currentUser.uid || 'anonymous',
+        requesterEmail: currentUser.email || 'anonymous@example.com',
+        status: 'pending', // 初期ステータスは 'pending'
+        userEmail: selectedSession.userEmail // セッションオーナーのメールアドレス
       });
+
+      // メール送信時に、上記で作成したドキュメントの ID を渡す
       await sendEmailToOwner(
         selectedSession.userEmail,
         selectedSession.title,
-        currentUser.email,
+        currentUser.email || 'anonymous@example.com',
         requestType,
         docRef.id // ★修正: ここで通知ドキュメントの ID を渡す
       );
