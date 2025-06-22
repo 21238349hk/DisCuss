@@ -47,35 +47,57 @@ export default function Profile({ onNavigate, user }) {
     if (!user) return;
     const fetchStats = async () => {
       try {
-        const sessionsSnapshot = await getDocs(collection(db, 'sessions'));
-        let joined = 0;
-        let created = 0;
-        let scores = [];
+        const sessionsCollectionRef = collection(db, 'sessions');
+        const notificationsCollectionRef = collection(db, 'notifications');
+        const userDocRef = doc(db, 'users', user.uid); // ★現在のユーザーのドキュメント参照
 
-        sessionsSnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.participants?.includes(user.uid)) joined++;
-          if (data.createdBy === user.uid) created++;
+        // ★ 統計情報の計算 (Firebaseから取得したデータに基づく)
+        let joinedCount = 0; // 参加セッション数
+        let createdCount = 0; // 作成セッション数
+        let evaluationScores = []; // 評価スコア
+
+        // sessionsコレクションから、参加セッション数、作成セッション数、評価を計算
+        const sessionsSnapshot = await getDocs(sessionsCollectionRef);
+        sessionsSnapshot.forEach((sessionDoc) => {
+          const data = sessionDoc.data();
+          if (data.participants && data.participants.includes(user.uid)) {
+            joinedCount++;
+          }
+          if (data.createdBy === user.uid) {
+            createdCount++;
+          }
           const score = data.evaluations?.[user.uid];
-          if (typeof score === 'number') scores.push(score);
+          if (typeof score === 'number') {
+            evaluationScores.push(score);
+          }
         });
 
-        // ★追加: 申請セッション数を取得
+        // 申請セッション数を取得
         const notificationsQuery = query(
-          collection(db, 'notifications'),
+          notificationsCollectionRef,
           where('requesterId', '==', user.uid)
         );
         const notificationsSnapshot = await getDocs(notificationsQuery);
-        const appliedSessionsCount = notificationsSnapshot.size; // 申請ドキュメントの数
+        const appliedSessionsCount = notificationsSnapshot.size;
 
-        const avgScore = scores.length > 0
-          ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
-          : 'N/A';
+        // 平均評価を計算
+        const avgScore = evaluationScores.length > 0
+          ? (evaluationScores.reduce((a, b) => a + b, 0) / evaluationScores.length).toFixed(1)
+          : '-';
+
+        await setDoc(userDocRef, {
+          stats: {
+            joinedSessions: joinedCount,
+            createdSessions: createdCount,
+            appliedSessions: appliedSessionsCount,
+            avgEvaluation: avgScore
+          }
+        }, { merge: true });
 
         setStats([
-          { label: '参加セッション数', value: String(joined), icon: Calendar },
-          { label: '作成セッション数', value: String(created), icon: Award },
-          { label: '申請セッション数', value: String(appliedSessionsCount), icon: Star }, // ★修正: ここに申請数を設定
+          { label: '参加セッション数', value: String(appliedSessionsCount), icon: Calendar },
+          { label: '作成セッション数', value: String(createdCount), icon: Award },
+          { label: '申請セッション数', value: String(joinedCount), icon: Star }, // ★修正: ここに申請数を設定
           { label: '平均評価', value: avgScore, icon: TrendingUp } // 平均評価は既存のスコアから
         ]);
       } catch (err) {

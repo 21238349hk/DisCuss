@@ -83,9 +83,9 @@ export default function Dashboard({ onNavigate, user }) {
           }
         }, { merge: true });
         setStats([
-          { label: '参加セッション数', value: String(joinedCount), icon: Users, color: 'bg-blue-500' },
+          { label: '参加セッション数', value: String(appliedSessionsCount), icon: Users, color: 'bg-blue-500' },
           { label: '作成セッション数', value: String(createdCount), icon: Trophy, color: 'bg-yellow-500' },
-          { label: '申請セッション数', value: String(appliedSessionsCount), icon: Calendar, color: 'bg-green-500' },
+          { label: '申請セッション数', value: String(joinedCount), icon: Calendar, color: 'bg-green-500' },
           { label: '平均評価', value: avgScore, icon: TrendingUp, color: 'bg-purple-500' }
         ]);
 
