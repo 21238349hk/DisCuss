@@ -107,8 +107,9 @@ function SessionList({ currentUser, searchQuery }) {
     if (!selectedSession || !currentUser) return;
 
     setIsSubmitting(true);
+    const notificationId = `${selectedSession.id}_${currentUser.uid}`; 
+
     try {
-      // notifications コレクションにドキュメントを追加し、その ID を取得
       const docRef = await addDoc(collection(db, 'notifications'), {
         sessionId: selectedSession.id,
         type: requestType,
@@ -122,7 +123,7 @@ function SessionList({ currentUser, searchQuery }) {
       await sendEmailToOwner(
         selectedSession.userEmail,
         selectedSession.title,
-        currentUser.email || 'anonymous@example.com',
+        currentUser.email,
         requestType,
         docRef.id // ★修正: ここで通知ドキュメントの ID を渡す
       );
@@ -139,6 +140,7 @@ function SessionList({ currentUser, searchQuery }) {
       setIsSubmitting(false);
     }
   };
+
 
   if (loading) return <p>セッションを読み込み中...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
