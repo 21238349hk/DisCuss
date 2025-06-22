@@ -107,8 +107,10 @@ function SessionList({ currentUser, searchQuery }) {
     if (!selectedSession || !currentUser) return;
 
     setIsSubmitting(true);
+    const notificationId = `${selectedSession.id}_${currentUser.uid}`; 
+
     try {
-      await setDoc(doc(db, 'notifications', `${selectedSession.id}_${currentUser.uid}`), {
+      await setDoc(doc(db, 'notifications', notificationId), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
@@ -119,13 +121,13 @@ function SessionList({ currentUser, searchQuery }) {
         userEmail: selectedSession.userEmail
       });
 
-
       await sendEmailToOwner(
         selectedSession.userEmail,
         selectedSession.title,
-        currentUser.email || 'anonymous@example.com',
+        currentUser.email,
         requestType,
-        docRef.id
+        selectedSession.id,
+        currentUser.uid 
       );
 
       await fetchSubmittedRequests();
@@ -140,6 +142,7 @@ function SessionList({ currentUser, searchQuery }) {
       setIsSubmitting(false);
     }
   };
+
 
   if (loading) return <p>セッションを読み込み中...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
