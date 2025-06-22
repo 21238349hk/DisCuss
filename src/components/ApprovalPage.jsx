@@ -251,12 +251,15 @@ export default function ApprovalPage({ user }) {
           <p><strong>氏名:</strong> {profile.displayName || 'N/A'}</p>
           <p><strong>大学:</strong> {profile.university || 'N/A'}</p>
           <p><strong>専攻:</strong> {profile.major || profile.department || 'N/A'}</p>
+          <p><strong>志望業界:</strong> {profile.targetIndustries || 'N/A'}</p>
+
         </div>
 
         <div className="decision-buttons">
-          <button className="approve" onClick={() => handleDecision('approved')}>承認</button>
-          <button className="reject" onClick={() => handleDecision('rejected')}>拒否</button>
+            <button className="approve-btn" onClick={() => handleDecision('approved')}>承認</button>
+            <button className="reject-btn" onClick={() => handleDecision('rejected')}>拒否</button>
         </div>
+
 
         {status && (
           <p className={`status-message ${status.includes('失敗') || status.includes('エラー') ? 'error' : ''}`}>
