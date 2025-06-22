@@ -40,6 +40,7 @@
 
 .chat-row.ai {
   justify-content: flex-start;
+  align-items: flex-start;
 }
 
 .chat-avatar {
@@ -47,6 +48,7 @@
   height: 36px;
   border-radius: 50%;
   margin-right: 0.5rem;
+  margin-top: 0.2rem;
 }
 
 .chat-bubble {
@@ -86,7 +88,7 @@
 }
 
 .chat-input button {
-  background-color: black;
+  background-color:#6b7280;
   height: 100%;
   color: white;
   padding: 0.5rem 1rem;
@@ -114,4 +116,58 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.ai-chat-header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.chat-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+/* モード切替ボタンを右上に固定 */
+.aigd-mode-button {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #4b5563;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s ease;
+}
+
+.aigd-mode-button:hover {
+  color: #000;
+}
+
+/* AI1のスタイル */
+.chat-row.ai1 {
+  justify-content: flex-start;
+}
+
+.chat-bubble.ai1 {
+  background-color: #d1e8ff; /* 青系 */
+  color: #000;
+  border-top-left-radius: 0;
+}
+
+/* AI2のスタイル */
+.chat-row.ai2 {
+  justify-content: flex-start;
+}
+
+.chat-bubble.ai2 {
+  background-color: #ffe4cc; /* オレンジ系 */
+  color: #000;
+  border-top-left-radius: 0;
 }

@@ -1,4 +1,3 @@
-// components/AIChatPage.jsx
 import React, { useState } from 'react';
 import '../styles/AIChatPage.css';
 
@@ -6,6 +5,7 @@ export default function AIChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState('consult'); // 'consult' or 'gd'
 
   const handleSend = async () => {
     const trimmedInput = input.trim();
@@ -17,7 +17,8 @@ export default function AIChatPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3001/api/ask-gemini', {
+      const endpoint = mode === 'gd' ? '/api/ask-gemini-gd' : '/api/ask-gemini';
+      const res = await fetch(`http://localhost:3001${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trimmedInput })
@@ -25,12 +26,16 @@ export default function AIChatPage() {
 
       const data = await res.json();
 
-      const aiMessage = {
-        role: 'ai',
-        text: data.reply || 'AIからの返答がありませんでした。'
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
+      if (mode === 'gd') {
+        const aiMessages = data.replies || [];
+        setMessages((prev) => [...prev, ...aiMessages]);
+      } else {
+        const aiMessage = {
+          role: 'ai',
+          text: data.reply || 'AIからの返答がありませんでした。'
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      }
     } catch (error) {
       console.error('Gemini APIエラー:', error);
       setMessages((prev) => [
@@ -42,20 +47,43 @@ export default function AIChatPage() {
     }
   };
 
+  const handleModeToggle = () => {
+    const newMode = mode === 'consult' ? 'gd' : 'consult';
+    setMode(newMode);
+    setMessages([]); // モード切替時に履歴をリセット
+  };
+
   return (
     <div className="ai-chat-container">
-      <h2>AI相談チャット</h2>
+      <div className="ai-chat-header">
+        <h2 className="chat-title">{mode === 'gd' ? 'AIGDチャット' : 'AI相談チャット'}</h2>
+        <button className="aigd-mode" onClick={handleModeToggle}>
+          {mode === 'gd' ? '相談モードに切替' : 'AIGDモードに切替'}
+        </button>
+      </div>
+
       <div className="chat-box">
-        {messages.map((msg, idx) => (
-          <div key={idx} className={`chat-row ${msg.role}`}>
-            {msg.role === 'ai' && (
-              <img src="/ai-icon.png" alt="AIアイコン" className="chat-avatar" />
-            )}
-            <div className={`chat-bubble ${msg.role}`}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
+{messages.map((msg, idx) => (
+  <div key={idx} className={`chat-row ${msg.role}`}>
+    {(msg.role === 'ai' || msg.role === 'ai1' || msg.role === 'ai2') && (
+      <img
+        src={
+          msg.role === 'ai1'
+            ? '/ai1-icon.png'
+            : msg.role === 'ai2'
+            ? '/ai2-icon.png'
+            : '/ai-icon.png'
+        }
+        alt="AIアイコン"
+        className="chat-avatar"
+      />
+    )}
+    <div className={`chat-bubble ${msg.role}`}>
+      {msg.text}
+    </div>
+  </div>
+))}
+
         {loading && (
           <div className="chat-row ai">
             <img src="/ai-icon.png" alt="AIアイコン" className="chat-avatar" />
@@ -66,7 +94,6 @@ export default function AIChatPage() {
         )}
       </div>
 
-      {/* ▼ form で囲んで onSubmit を使う */}
       <form
         className="chat-input"
         onSubmit={(e) => {
