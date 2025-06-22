@@ -5,8 +5,9 @@ import {
   doc, getDoc, updateDoc
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { createSharedZoomMeeting } from '../config/shared-api';
+import { createMockZoomMeeting, getManualZoomUrl } from '../config/zoom-proxy';
 import '../styles/SessionCreateForm.css';
-
 function SessionCreateForm({ onNavigate }) {
   const [formData, setFormData] = useState({
     title: '', description: '', discussion_theme: '', difficulty: '',
@@ -21,44 +22,46 @@ function SessionCreateForm({ onNavigate }) {
   const [isIssuingUrl, setIsIssuingUrl] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessCheck, setShowSuccessCheck] = useState(false);
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser || null);
     });
     return () => unsubscribe();
   }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
-
   const handleIssueZoomUrl = async () => {
     setIsIssuingUrl(true);
     setError(null);
     try {
-      const response = await fetch('https://us-central1-gd-tanyao.cloudfunctions.net/createZoomMeeting', {
+      const response = await fetch('https://gd-tanyao.web.app/api/create-zoom-meeting', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: formData.title || '新しいセッション' }),
       });
-      if (!response.ok) throw new Error((await response.json()).error || 'Zoom URLの発行に失敗しました。');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Zoom URLの発行に失敗しました。');
+      }
+      
       const data = await response.json();
       setFormData(prevData => ({ ...prevData, zoom_link: data.join_url }));
+      setMessage('Zoom URLが正常に発行されました');
     } catch (err) {
-      setError(err.message);
+      console.error('Zoom URL発行エラー:', err);
+      setError(`Zoom URL発行エラー: ${err.message}`);
     } finally {
       setIsIssuingUrl(false);
     }
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!user) return setError('セッションを作成するにはログインが必要です。');
     setShowConfirmation(true);
   };
-
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
@@ -84,13 +87,11 @@ function SessionCreateForm({ onNavigate }) {
         session_date: '', start_time: '', duration_minutes: 40, max_participants: 6,
         meeting_method: 'オンライン', zoom_link: ''
       });
-
       setShowSuccessCheck(true);
         setTimeout(() => {
           setShowSuccessCheck(false);
           onNavigate('dashboard');
       }, 1500);  
-
     } catch (err) {
       setError(`保存に失敗しました: ${err.message}`);
     } finally {
@@ -98,7 +99,6 @@ function SessionCreateForm({ onNavigate }) {
       setShowConfirmation(false);
     }
   };
-
   const steps = [
     <>
       <label>セッションタイトル</label>
@@ -146,7 +146,6 @@ function SessionCreateForm({ onNavigate }) {
       )}
     </>
   ];
-
   return (
     <div className="session-form-container">
       <h1>新しいGDセッションを作成</h1>
@@ -190,7 +189,6 @@ function SessionCreateForm({ onNavigate }) {
       )}
       {message && <p style={{ color: 'green' }}>{message}</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-
       {showSuccessCheck && (
         <div className="checkmark-overlay">
           <div className="checkmark-container">
@@ -200,9 +198,7 @@ function SessionCreateForm({ onNavigate }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }
-
 export default SessionCreateForm;
