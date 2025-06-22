@@ -5,9 +5,8 @@ import {
   doc, getDoc, updateDoc
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { createSharedZoomMeeting } from '../config/shared-api';
-import { createMockZoomMeeting, getManualZoomUrl } from '../config/zoom-proxy';
 import '../styles/SessionCreateForm.css';
+
 function SessionCreateForm({ onNavigate }) {
   const [formData, setFormData] = useState({
     title: '', description: '', discussion_theme: '', difficulty: '',
@@ -22,46 +21,50 @@ function SessionCreateForm({ onNavigate }) {
   const [isIssuingUrl, setIsIssuingUrl] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessCheck, setShowSuccessCheck] = useState(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser || null);
     });
     return () => unsubscribe();
   }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
+
   const handleIssueZoomUrl = async () => {
     setIsIssuingUrl(true);
     setError(null);
     try {
-      const response = await fetch('https://gd-tanyao.web.app/api/create-zoom-meeting', {
+      const response = await fetch(process.env.REACT_APP_ZOOM_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: formData.title || '新しいセッション' }),
+        body: JSON.stringify({ topic: formData.title || '新しいセッション' })
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Zoom URLの発行に失敗しました。');
       }
-      
+
       const data = await response.json();
       setFormData(prevData => ({ ...prevData, zoom_link: data.join_url }));
       setMessage('Zoom URLが正常に発行されました');
     } catch (err) {
-      console.error('Zoom URL発行エラー:', err);
       setError(`Zoom URL発行エラー: ${err.message}`);
     } finally {
       setIsIssuingUrl(false);
     }
   };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!user) return setError('セッションを作成するにはログインが必要です。');
     setShowConfirmation(true);
   };
+
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
@@ -73,14 +76,16 @@ function SessionCreateForm({ onNavigate }) {
         createdByName: user.displayName || user.email,
         userEmail: user.email,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
+
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const prev = userDocSnap.data()?.stats?.createdSessions || 0;
         await updateDoc(userDocRef, { 'stats.createdSessions': prev + 1 });
       }
+
       setMessage(`セッションが作成されました。ID: ${docRef.id}`);
       setFormData({
         title: '', description: '', discussion_theme: '', difficulty: '',
@@ -88,10 +93,10 @@ function SessionCreateForm({ onNavigate }) {
         meeting_method: 'オンライン', zoom_link: ''
       });
       setShowSuccessCheck(true);
-        setTimeout(() => {
-          setShowSuccessCheck(false);
-          onNavigate('dashboard');
-      }, 1500);  
+      setTimeout(() => {
+        setShowSuccessCheck(false);
+        onNavigate('dashboard');
+      }, 1500);
     } catch (err) {
       setError(`保存に失敗しました: ${err.message}`);
     } finally {
@@ -99,6 +104,7 @@ function SessionCreateForm({ onNavigate }) {
       setShowConfirmation(false);
     }
   };
+
   const steps = [
     <>
       <label>セッションタイトル</label>
@@ -110,7 +116,7 @@ function SessionCreateForm({ onNavigate }) {
       <label>ディスカッションテーマ</label>
       <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required />
       <label>難易度</label>
-      <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
+      <select name="difficulty" value={formData.difficulty} onChange={handleChange} required>
         <option value="">選択してください</option>
         <option value="初級">初級</option>
         <option value="中級">中級</option>
@@ -131,14 +137,14 @@ function SessionCreateForm({ onNavigate }) {
     </>,
     <>
       <label>開催方式</label>
-      <select name="meeting_method" value={formData.meeting_method} onChange={handleChange}>
+      <select name="meeting_method" value={formData.meeting_method} onChange={handleChange} required>
         <option value="オンライン">オンライン</option>
         <option value="対面">対面</option>
       </select>
       {formData.meeting_method === 'オンライン' && (
         <>
           <label>Zoom招待リンク:</label>
-          <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} />
+          <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} required pattern="https?://.+" />
           <button type="button" onClick={handleIssueZoomUrl} disabled={isIssuingUrl}>
             {isIssuingUrl ? '発行中...' : 'Zoom URLを即時発行'}
           </button>
@@ -146,6 +152,7 @@ function SessionCreateForm({ onNavigate }) {
       )}
     </>
   ];
+
   return (
     <div className="session-form-container">
       <h1>新しいGDセッションを作成</h1>
@@ -187,8 +194,11 @@ function SessionCreateForm({ onNavigate }) {
           </div>
         </div>
       )}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {(message || error) && (
+        <p className={`status-msg ${error ? 'error' : 'success'}`}>
+          {error || message}
+        </p>
+      )}
       {showSuccessCheck && (
         <div className="checkmark-overlay">
           <div className="checkmark-container">
@@ -201,4 +211,5 @@ function SessionCreateForm({ onNavigate }) {
     </div>
   );
 }
+
 export default SessionCreateForm;
