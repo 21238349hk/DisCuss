@@ -17,6 +17,7 @@ export default function AIChatPage() {
     setLoading(true);
 
     try {
+<<<<<<< HEAD
       const askGemini = httpsCallable(functions, 'askGemini');
       const result = await askGemini({ message: input });
       const data = result.data;
@@ -27,6 +28,28 @@ export default function AIChatPage() {
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+=======
+      const endpoint = mode === 'gd' ? '/api/ask-gemini-gd' : '/api/ask-gemini';
+      const res = await fetch(`http://localhost:3001${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmedInput })
+      });
+
+      const data = await res.json();
+
+      if (mode === 'gd') {
+        const aiMessages = data.replies || [];
+        setMessages((prev) => [...prev, ...aiMessages]);
+      } else {
+        const aiMessage = {
+          role: 'ai',
+          text: data.reply || 'AIからの返答がありませんでした。'
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      }
+
+>>>>>>> 9269835111451debb71be56f21a46103da6d7e3a
     } catch (error) {
       console.error('Gemini APIエラー:', error);
       setMessages((prev) => [
