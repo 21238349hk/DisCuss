@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase-config';
 import '../styles/SessionList.css';
 import emailjs from 'emailjs-com';
+
 import {
   collection,
   query,
   orderBy,
   onSnapshot,
-  addDoc,
   getDocs,
-  where
+  where,
+  setDoc,         
+  doc             
 } from 'firebase/firestore';
 
-function SessionList({ currentUser }) {
+
+function SessionList({ currentUser, searchQuery }) {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,6 +24,7 @@ function SessionList({ currentUser }) {
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRequests, setSubmittedRequests] = useState({});
+
 
   useEffect(() => {
     const q = query(collection(db, 'sessions'), orderBy('session_datetime', 'asc'));
@@ -67,6 +71,16 @@ function SessionList({ currentUser }) {
     fetchSubmittedRequests();
   }, [currentUser]);
 
+  const filteredSessions = sessions.filter(session => {
+  const query = searchQuery.toLowerCase();
+  return (
+    session.title?.toLowerCase().includes(query) ||
+    session.description?.toLowerCase().includes(query) ||
+    session.discussion_theme?.toLowerCase().includes(query)
+  );
+});
+
+
   const openModal = (session, type) => {
     setSelectedSession(session);
     setRequestType(type);
@@ -94,8 +108,7 @@ function SessionList({ currentUser }) {
 
     setIsSubmitting(true);
     try {
-      // notifications コレクションにドキュメントを追加し、その ID を取得
-      const docRef = await addDoc(collection(db, 'notifications'), {
+      await setDoc(doc(db, 'notifications', `${selectedSession.id}_${currentUser.uid}`), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
@@ -137,7 +150,7 @@ function SessionList({ currentUser }) {
         <p>まだセッションがありません。</p>
       ) : (
         <ul className="session-list">
-          {sessions.map((session) => {
+        {filteredSessions.map((session) => {
             const requestStatus = submittedRequests[session.id];
             return (
               <li key={session.id} className="session-item float-animate">

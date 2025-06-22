@@ -8,9 +8,10 @@ export default function AIChatPage() {
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    const trimmedInput = input.trim();
+    if (!trimmedInput) return;
 
-    const userMessage = { role: 'user', text: input };
+    const userMessage = { role: 'user', text: trimmedInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
@@ -19,7 +20,7 @@ export default function AIChatPage() {
       const res = await fetch('http://localhost:3001/api/ask-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ message: trimmedInput })
       });
 
       const data = await res.json();
@@ -46,33 +47,43 @@ export default function AIChatPage() {
       <h2>AI相談チャット</h2>
       <div className="chat-box">
         {messages.map((msg, idx) => (
-          <div key={idx} className={`chat-message ${msg.role}`}>
-            <strong>{msg.role === 'user' ? 'あなた' : 'AI'}:</strong> {msg.text}
+          <div key={idx} className={`chat-row ${msg.role}`}>
+            {msg.role === 'ai' && (
+              <img src="/ai-icon.png" alt="AIアイコン" className="chat-avatar" />
+            )}
+            <div className={`chat-bubble ${msg.role}`}>
+              {msg.text}
+            </div>
           </div>
         ))}
         {loading && (
-          <div className="chat-message ai">
-            <em>AIが考え中です...</em>
+          <div className="chat-row ai">
+            <img src="/ai-icon.png" alt="AIアイコン" className="chat-avatar" />
+            <div className="chat-bubble ai">
+              <em>AIが考え中です...</em>
+            </div>
           </div>
         )}
       </div>
-      <div className="chat-input">
+
+      {/* ▼ form で囲んで onSubmit を使う */}
+      <form
+        className="chat-input"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSend();
+        }}
+      >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
           placeholder="相談内容を入力してください"
         />
-        <button onClick={handleSend} disabled={loading}>
+        <button type="submit" disabled={loading}>
           {loading ? '送信中...' : '送信'}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
