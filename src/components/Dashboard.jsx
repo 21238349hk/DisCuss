@@ -38,6 +38,7 @@ export default function Dashboard({ onNavigate, user }) {
       try {
         const sessionsCollectionRef = collection(db, 'sessions');
         const notificationsCollectionRef = collection(db, 'notifications');
+        const userDocRef = doc(db, 'users', user.uid); // ユーザーのドキュメント参照を取得
 
         // ★ 統計情報の計算 (Firebaseから取得したデータに基づく)
         let joinedCount = 0; // 参加セッション数
@@ -45,8 +46,8 @@ export default function Dashboard({ onNavigate, user }) {
         let evaluationScores = []; // 評価スコア
 
         const allSessionsSnapshot = await getDocs(sessionsCollectionRef);
-        allSessionsSnapshot.forEach((doc) => {
-          const data = doc.data();
+        allSessionsSnapshot.forEach((sessionDoc) => {
+          const data = sessionDoc.data();
           // 参加セッション数を計算
           if (data.participants && data.participants.includes(user.uid)) {
             joinedCount++;
@@ -74,6 +75,15 @@ export default function Dashboard({ onNavigate, user }) {
         const avgScore = evaluationScores.length > 0
           ? (evaluationScores.reduce((a, b) => a + b, 0) / evaluationScores.length).toFixed(1)
           : '-';
+
+        await setDoc(userDocRef, {
+          stats: {
+            joinedSessions: joinedCount,
+            createdSessions: createdCount,
+            appliedSessions: appliedSessionsCount,
+            avgEvaluation: avgScore
+          }
+        }, { merge: true });
         setStats([
           { label: '参加セッション数', value: String(joinedCount), icon: Users, color: 'bg-blue-500' },
           { label: '作成セッション数', value: String(createdCount), icon: Trophy, color: 'bg-yellow-500' },
