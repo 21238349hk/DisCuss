@@ -27,11 +27,11 @@ const GEMINI_API_KEY = functions.config().gemini?.api_key;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "");
 
 /**
- * AIチャット機能の呼び出し可能関数（共有版）
+ * AIチャット機能の呼び出し可能関数
  */
-export const askSharedGemini = onCall(async (request) => {
+export const askGemini = onCall(async (request) => {
   try {
-    const {message, userId = 'anonymous'} = request.data;
+    const {message} = request.data;
     
     if (!message) {
       throw new Error("メッセージが提供されていません");
@@ -47,7 +47,7 @@ export const askSharedGemini = onCall(async (request) => {
     const response = await result.response;
     const text = response.text();
 
-    logger.info(`AIチャットが正常に実行されました (User: ${userId})`);
+    logger.info("AIチャットが正常に実行されました");
     
     return {
       success: true,
@@ -94,9 +94,9 @@ async function getZoomAccessToken() {
 }
 
 /**
- * Zoomミーティング作成のHTTPトリガー関数（共有版）
+ * Zoomミーティング作成のHTTPトリガー関数
  */
-export const createSharedZoomMeeting = onRequest({
+export const createZoomMeeting = onRequest({
   // フロントエンド(http://localhost:5173など)からのアクセスを許可
   cors: true,
 }, async (req, res) => {
@@ -109,15 +109,13 @@ export const createSharedZoomMeeting = onRequest({
     }
 
     try {
-      const {topic, userId = 'anonymous'} = req.body;
-      
       const accessToken = await getZoomAccessToken();
-      const meetingTopic = topic || "新規ディスカッションセッション";
+      const topic = req.body.topic || "新規ディスカッションセッション";
 
       const zoomResponse = await axios.post(
         "https://api.zoom.us/v2/users/me/meetings",
         {
-          topic: meetingTopic,
+          topic: topic,
           type: 2, // スケジュールされたミーティング
           duration: 60,
           settings: {
@@ -134,7 +132,7 @@ export const createSharedZoomMeeting = onRequest({
         },
       );
 
-      logger.info(`Zoomミーティングが正常に作成されました (User: ${userId})`);
+      logger.info("Zoomミーティングが正常に作成されました。");
       res.status(200).json({join_url: zoomResponse.data.join_url});
     } catch (error) {
       logger.error("Zoomミーティングの作成に失敗しました:", error);

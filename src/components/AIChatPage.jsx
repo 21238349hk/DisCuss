@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { callGeminiAPI } from '../config/api';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase';
 import '../styles/AIChatPage.css';
 
 export default function AIChatPage() {
@@ -8,15 +9,15 @@ export default function AIChatPage() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('consult'); 
   const handleSend = async () => {
-    const trimmedInput = input.trim();
-    if (!trimmedInput) return;
+    if (!input.trim()) return;
 
-    const userMessage = { role: 'user', text: trimmedInput };
+    const userMessage = { role: 'user', text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
     try {
+<<<<<<< Updated upstream
       const endpoint = mode === 'gd' ? '/api/ask-gemini-gd' : '/api/ask-gemini';
       const res = await fetch(`http://localhost:3001${endpoint}`, {
         method: 'POST',
@@ -36,6 +37,18 @@ export default function AIChatPage() {
         };
         setMessages((prev) => [...prev, aiMessage]);
       }
+=======
+      const askGemini = httpsCallable(functions, 'askGemini');
+      const result = await askGemini({ message: input });
+      const data = result.data;
+
+      const aiMessage = {
+        role: 'ai',
+        text: data.response || 'AIからの返答がありませんでした。'
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+>>>>>>> Stashed changes
     } catch (error) {
       console.error('Gemini APIエラー:', error);
       setMessages((prev) => [
