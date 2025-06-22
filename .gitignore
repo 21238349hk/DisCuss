@@ -22,7 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.env
+# .env
 # Python仮想環境とキャッシュを無視
 backend/venv/
 backend/__pycache__/
