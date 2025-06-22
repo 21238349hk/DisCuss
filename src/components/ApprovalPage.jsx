@@ -22,9 +22,6 @@ export default function ApprovalPage({ user }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [userProfile, setUserProfile] = useState(null); 
 
-  console.log("✅ URLから取得した sessionId:", sessionId);
-  console.log("✅ URLから取得した requesterId:", requesterId);
-
   useEffect(() => {
     if (!user || !user.uid) {
       setUserProfile(null); 
@@ -61,7 +58,6 @@ export default function ApprovalPage({ user }) {
         const sessionDocRef = doc(db, 'sessions', sessionId);
         const requesterUserDocRef = doc(db, 'users', requesterId);
         const notificationDocRef = doc(db, 'notifications', `${sessionId}_${requesterId}`); 
-        console.log("✅ 通知ドキュメント参照:", notificationDocRef.path); 
 
         const [sessionSnap, requesterUserSnap, notificationSnap] = await Promise.all([
           getDoc(sessionDocRef),
@@ -70,7 +66,6 @@ export default function ApprovalPage({ user }) {
         ]);
 
         if (sessionSnap.exists()) {
-          console.log("✅ セッション情報取得成功:", sessionSnap.data());
           setSession(sessionSnap.data());
         } else {
           setError('セッション情報が見つかりません。');
@@ -78,18 +73,14 @@ export default function ApprovalPage({ user }) {
         }
 
         if (requesterUserSnap.exists()) {
-          console.log("✅ 申請者プロフィール取得成功:", requesterUserSnap.data());
           setProfile(requesterUserSnap.data());
         } else {
-          console.warn("⚠️ 申請者プロフィールが見つかりません。requesterId:", requesterId);
           setError(prev => prev ? prev + ' 申請者プロフィールが見つかりません。' : '申請者プロフィールが見つかりません。');
           return; 
         }
 
         if (!notificationSnap.exists()) {
-          console.warn("⚠️ 通知ドキュメントが見つかりません:", notificationDocRef.path);
         } else {
-          console.log("✅ 通知ドキュメント取得成功:", notificationSnap.data());
         }
 
       } catch (err) {
@@ -102,38 +93,41 @@ export default function ApprovalPage({ user }) {
     fetchData();
   }, [sessionId, requesterId]); 
 
-  const sendEmailToApplicant = async (
-    targetRequesterEmail, 
-    targetRequesterName, 
-    targetSessionTitle,  
-    targetSessionDate,   
-    targetRequestType,    
-    decisionType,         
-    targetOwnerEmail      
-  ) => {
-    let templateId = 'template_wmkriqn';
+    const sendEmailToApplicant = async (
+        targetRequesterEmail,
+        targetRequesterName,
+        targetSessionTitle,
+        targetSessionDate,
+        targetRequestType,
+        decisionType,
+        targetOwnerEmail
+    ) => {
+    const approvedTemplateId = 'template_wntd5x9';   
+    const rejectedTemplateId = 'template_xlcz1vf'; 
+
+    const templateId = decisionType === 'approved' ? approvedTemplateId : rejectedTemplateId;
 
     try {
-      await emailjs.send(
-        'service_a9mr7c2', 
-        templateId,        
+        await emailjs.send(
+        'service_axahjrs', 
+        templateId,
         {
-          to_email: targetRequesterEmail,
-          requesterName: targetRequesterName,
-          sessionTitle: targetSessionTitle,
-          sessionDate: targetSessionDate,
-          requestType: targetRequestType,
-          ownerEmail: targetOwnerEmail,
-          name: 'DisCuss', 
-          email: targetOwnerEmail
+            to_email: targetRequesterEmail,
+            requesterName: targetRequesterName,
+            sessionTitle: targetSessionTitle,
+            sessionDate: targetSessionDate,
+            requestType: targetRequestType,
+            ownerEmail: targetOwnerEmail,
+            name: 'DisCuss',
+            email: targetOwnerEmail
         },
-        '7fDpG5aIjSV3qnE5F' 
-      );
-      console.log(`📤 申請者へのメール送信成功 (${decisionType})`);
+        'cX_QxGBbnmjHYDS0D' 
+        );
     } catch (err) {
-      console.error(`❌ メール送信エラー (${decisionType}):`, err);
+        console.error(`メール送信エラー (${decisionType}):`, err);
     }
-  };
+    };
+
 
   const handleDecision = async (decision) => {
     if (!session || !profile) {
@@ -144,44 +138,36 @@ export default function ApprovalPage({ user }) {
     try {
       const notificationRef = doc(db, 'notifications', `${sessionId}_${requesterId}`);
       const notifDoc = await getDoc(notificationRef);
-      console.log("📦 通知データ取得:", notifDoc.exists());
 
       if (notifDoc.exists()) {
         const notificationData = notifDoc.data();
-        console.log("✅ 通知データ内容:", notificationData);
 
         await updateDoc(notifDoc.ref, { status: decision });
         setStatus(`申請を「${decision === 'approved' ? '承認' : '拒否'}」に更新しました。`);
 
         if (notificationData.requesterEmail && notificationData.type && session.userEmail) {
-          console.log("📤 メール送信対象:", {
-            requesterEmail: notificationData.requesterEmail,
-            requesterName: profile.displayName,
-            sessionTitle: session.title,
-            sessionDate: session.session_datetime.toDate().toLocaleString('ja-JP'),
-            type: notificationData.type,
-            ownerEmail: session.userEmail
-          });
-
-          await sendEmailToApplicant(
+            await sendEmailToApplicant(
             notificationData.requesterEmail,
-            profile.displayName || notificationData.requesterEmail, 
+            profile.displayName || notificationData.requesterEmail,
             session.title,
             new Date(session.session_datetime.toDate()).toLocaleString('ja-JP'),
-            notificationData.type, 
-            decision, 
-            session.userEmail 
-          );
-        } else {
-          console.warn("⚠️ メール送信に必要な情報が不足しています");
-          setStatus(prev => prev + ' (メールは送信されませんでした)');
+            notificationData.type,
+            decision,
+            session.userEmail
+            );
         }
 
-      } else {
+        if (decision === 'approved') {
+            setStatus('承認されました。ダッシュボードに移動します...');
+            setTimeout(() => navigate('/'), 2000);
+        }
+
+        } else {
         setStatus('エラー: 対応する申請ドキュメントが見つかりませんでした。申請IDが正しいか確認してください。');
-      }
+        }
+
     } catch (err) {
-      console.error("❌ ステータス更新またはメール送信エラー:", err);
+      console.error("ステータス更新またはメール送信エラー:", err);
       setStatus('申請ステータスの更新に失敗しました。詳細はコンソールを確認してください。');
     }
   };
