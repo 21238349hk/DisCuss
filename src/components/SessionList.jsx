@@ -10,10 +10,9 @@ import {
   onSnapshot,
   getDocs,
   where,
-  addDoc, // setDocではなくaddDocを使用
-  // doc, // docはaddDocを使用する場合は不要になることが多い
+  setDoc,
+  doc
 } from 'firebase/firestore';
-
 
 function SessionList({ currentUser, searchQuery }) {
   const [sessions, setSessions] = useState([]);
@@ -24,7 +23,7 @@ function SessionList({ currentUser, searchQuery }) {
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRequests, setSubmittedRequests] = useState({});
-
+  const [approvedCounts, setApprovedCounts] = useState({});
 
   useEffect(() => {
     const q = query(collection(db, 'sessions'), orderBy('session_datetime', 'asc'));
@@ -52,6 +51,25 @@ function SessionList({ currentUser, searchQuery }) {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const fetchApprovedCounts = async () => {
+      const notifQuery = query(
+        collection(db, 'notifications'),
+        where('status', '==', 'approved')
+      );
+      const snapshot = await getDocs(notifQuery);
+      const counts = {};
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.type === '参加') {
+          counts[data.sessionId] = (counts[data.sessionId] || 0) + 1;
+        }
+      });
+      setApprovedCounts(counts);
+    };
+    fetchApprovedCounts();
+  }, []);
+
   const fetchSubmittedRequests = async () => {
     if (!currentUser) return;
     const notifQuery = query(
@@ -62,7 +80,7 @@ function SessionList({ currentUser, searchQuery }) {
     const requestsMap = {};
     notifSnapshot.forEach((doc) => {
       const data = doc.data();
-      requestsMap[data.sessionId] = data.type; // "参加" or "見学"
+      requestsMap[data.sessionId] = data.type;
     });
     setSubmittedRequests(requestsMap);
   };
@@ -80,12 +98,12 @@ function SessionList({ currentUser, searchQuery }) {
     );
   });
 
-
   const openModal = (session, type) => {
     setSelectedSession(session);
     setRequestType(type);
     setShowModal(true);
   };
+
   const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type, sessionId, requesterId) => {
     const approvalUrl = `https://gd-tanyao.web.app/approval?sessionId=${sessionId}&requesterId=${requesterId}`;
 
@@ -105,27 +123,28 @@ function SessionList({ currentUser, searchQuery }) {
 
   const handleConfirm = async () => {
     if (!selectedSession || !currentUser) return;
-
     setIsSubmitting(true);
+    const notificationId = `${selectedSession.id}_${currentUser.uid}`;
+
     try {
-      const docRef = await addDoc(collection(db, 'notifications'), {
+      await setDoc(doc(db, 'notifications', notificationId), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
         sessionTitle: selectedSession.title,
-        requesterId: currentUser.uid || 'anonymous',
-        requesterEmail: currentUser.email || 'anonymous@example.com',
-        status: 'pending', // 初期ステータスは 'pending'
-        userEmail: selectedSession.userEmail // セッションオーナーのメールアドレス
+        requesterId: currentUser.uid,
+        requesterEmail: currentUser.email,
+        status: 'pending',
+        userEmail: selectedSession.userEmail
       });
 
-      // メール送信時に、上記で作成したドキュメントの ID を渡す
       await sendEmailToOwner(
         selectedSession.userEmail,
         selectedSession.title,
-        currentUser.email || 'anonymous@example.com',
+        currentUser.email,
         requestType,
-        docRef.id // ★修正: ここで通知ドキュメントの ID を渡す
+        selectedSession.id,
+        currentUser.uid
       );
 
       await fetchSubmittedRequests();
@@ -140,7 +159,6 @@ function SessionList({ currentUser, searchQuery }) {
       setIsSubmitting(false);
     }
   };
-
 
   if (loading) return <p>セッションを読み込み中...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
@@ -165,16 +183,15 @@ function SessionList({ currentUser, searchQuery }) {
                   <p><strong>開始時間:</strong> {session.start_time}</p>
                   <p><strong>所要時間:</strong> {session.duration_minutes}分</p>
                   <p><strong>最大参加者数:</strong> {session.max_participants}人</p>
+                  <p><strong>参加承認済数:</strong> {approvedCounts[session.id] || 0}人</p>
                   <p><strong>開催方式:</strong> {session.meeting_method}</p>
                 </div>
 
                 <div className="session-actions">
                   {requestStatus ? (
-                    <>
-                      <button className="request-button joined" disabled>
-                        {requestStatus}申請済み
-                      </button>
-                    </>
+                    <button className="request-button joined" disabled>
+                      {requestStatus}申請済み
+                    </button>
                   ) : (
                     <>
                       <button className="request-button join" onClick={() => openModal(session, '参加')}>
