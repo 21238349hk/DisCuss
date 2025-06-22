@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, updateDoc } from 'firebase/firestore'; // collection, query, where, getDocsは不要なため削除
+import { doc, getDoc, updateDoc } from 'firebase/firestore'; 
 import { db } from '../firebase-config';
-import '../styles/ApprovalPage.css'; // CSSファイルのインポートパスを確認
-import Header from './Header'; // Headerコンポーネントのパスを確認
-import emailjs from 'emailjs-com'; // EmailJSをインポート
+import '../styles/ApprovalPage.css'; 
+import Header from './Header';
+import emailjs from 'emailjs-com'; 
 
-export default function ApprovalPage({ user }) { // 親コンポーネントからuserオブジェクトを受け取る
+export default function ApprovalPage({ user }) { 
   const [params] = useSearchParams();
   const navigate = useNavigate();
 
@@ -14,20 +14,17 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
   const requesterId = params.get("requesterId");
 
   const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null); // 申請者のプロフィール
+  const [profile, setProfile] = useState(null); 
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Headerに渡すためのstate
   const [searchQuery, setSearchQuery] = useState('');
-  const [userProfile, setUserProfile] = useState(null); // セッションオーナー（現在のユーザー）のプロフィール
+  const [userProfile, setUserProfile] = useState(null); 
 
-  // セッションオーナーのプロフィールをFirestoreから取得
   useEffect(() => {
     if (!user || !user.uid) {
-      // userが未認証またはUIDがない場合は処理しない
-      setUserProfile(null); // プロフィールをクリア
+      setUserProfile(null); 
       return;
     }
 
@@ -39,17 +36,16 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
           setUserProfile(userDocSnap.data());
         } else {
           console.warn("セッションオーナーのプロフィールが見つかりません。UID:", user.uid);
-          setUserProfile(null); // 見つからない場合はnull
+          setUserProfile(null); 
         }
       } catch (err) {
         console.error("セッションオーナーのプロフィール取得エラー:", err);
-        setUserProfile(null); // エラー時もnull
+        setUserProfile(null); 
       }
     };
     fetchOwnerProfile();
-  }, [user]); // userオブジェクトが変更されたときに実行
+  }, [user]); 
 
-  // セッション情報と申請者プロフィール、通知データを取得
   useEffect(() => {
     const fetchData = async () => {
       if (!sessionId || !requesterId) {
@@ -61,32 +57,30 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
       try {
         const sessionDocRef = doc(db, 'sessions', sessionId);
         const requesterUserDocRef = doc(db, 'users', requesterId);
-        const notificationDocRef = doc(db, 'notifications', `${sessionId}_${requesterId}`); // notificationsドキュメントも取得
+        const notificationDocRef = doc(db, 'notifications', `${sessionId}_${requesterId}`); 
 
         const [sessionSnap, requesterUserSnap, notificationSnap] = await Promise.all([
           getDoc(sessionDocRef),
           getDoc(requesterUserDocRef),
-          getDoc(notificationDocRef) // 通知ドキュメントの取得を追加
+          getDoc(notificationDocRef) 
         ]);
 
         if (sessionSnap.exists()) {
           setSession(sessionSnap.data());
         } else {
           setError('セッション情報が見つかりません。');
-          return; // エラーなので以降の処理を中断
+          return; 
         }
 
         if (requesterUserSnap.exists()) {
           setProfile(requesterUserSnap.data());
         } else {
           setError(prev => prev ? prev + ' 申請者プロフィールが見つかりません。' : '申請者プロフィールが見つかりません。');
-          return; // エラーなので以降の処理を中断
+          return; 
         }
 
-        // 通知ドキュメントの存在確認（EmailJS送信時にrequesterEmailとtypeが必要なため）
         if (!notificationSnap.exists()) {
           console.warn("対応する通知ドキュメントが見つかりません。メール通知ができない可能性があります。");
-          // ここでエラーにするかは要件によるが、今回は通知できない旨のログに留める
         }
 
       } catch (err) {
@@ -97,41 +91,39 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
       }
     };
     fetchData();
-  }, [sessionId, requesterId]); // sessionIdとrequesterIdが変わったときに実行
+  }, [sessionId, requesterId]); 
 
-  // 申請者へのメール送信関数
   const sendEmailToApplicant = async (
-    targetRequesterEmail, // 申請者のメールアドレス
-    targetRequesterName,  // 申請者の名前
-    targetSessionTitle,   // セッションタイトル
-    targetSessionDate,    // セッション開催日時
-    targetRequestType,    // 申請種別 (参加 or 見学)
-    decisionType,         // 'approved' or 'rejected'
-    targetOwnerEmail      // セッションオーナーのメールアドレス
+    targetRequesterEmail, 
+    targetRequesterName, 
+    targetSessionTitle,  
+    targetSessionDate,   
+    targetRequestType,    
+    decisionType,         
+    targetOwnerEmail      
   ) => {
     let templateId;
     if (decisionType === 'approved') {
-      templateId = 'template_approved_applicant_notification'; // 承認用テンプレートID
+      templateId = 'template_wmkriqn'; // 承認用テンプレートID
     } else {
-      templateId = 'template_rejected_applicant_notification'; // 拒否用テンプレートID
+      templateId = 'template_wmkriqn'; // 拒否用テンプレートID
     }
 
     try {
       await emailjs.send(
-        'service_a9mr7c2', // あなたのEmailJS Service ID
-        templateId,        // 決定に応じて動的にテンプレートIDを設定
+        'service_a9mr7c2', 
+        templateId,        
         {
           to_email: targetRequesterEmail,
           requesterName: targetRequesterName,
           sessionTitle: targetSessionTitle,
           sessionDate: targetSessionDate,
           requestType: targetRequestType,
-          // 'decision'変数が必要な場合はテンプレート側に合わせて追加
           ownerEmail: targetOwnerEmail,
-          name: 'DisCuss', // From Name のための静的な値
-          email: 'no-reply@your-app-domain.com' // Reply To のための固定メールアドレス（必要に応じて変更）
+          name: 'DisCuss', 
+          email: targetOwnerEmail
         },
-        '7fDpG5aIjSV3qnE5F' // あなたのEmailJS User ID
+        '7fDpG5aIjSV3qnE5F' 
       );
       console.log(`申請者へのメール送信成功 (${decisionType}通知)！`);
     } catch (err) {
@@ -152,20 +144,18 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
       if (notifDoc.exists()) {
         const notificationData = notifDoc.data();
 
-        // 状態を更新
         await updateDoc(notifDoc.ref, { status: decision });
         setStatus(`申請を「${decision === 'approved' ? '承認' : '拒否'}」に更新しました。`);
 
-        // メール通知（通知ドキュメントからrequesterEmailとtypeを取得）
         if (notificationData.requesterEmail && notificationData.type && session.userEmail) {
           await sendEmailToApplicant(
             notificationData.requesterEmail,
-            profile.name || notificationData.requesterEmail, // 申請者名 (プロフィール優先、なければメール)
+            profile.name || notificationData.requesterEmail, 
             session.title,
             new Date(session.session_datetime.toDate()).toLocaleString('ja-JP'),
-            notificationData.type, // 申請種別
-            decision, // 'approved' or 'rejected'
-            session.userEmail // セッションオーナーのメールアドレス
+            notificationData.type, 
+            decision, 
+            session.userEmail 
           );
         } else {
           console.warn("メール送信に必要な情報（申請者メール、申請タイプ、オーナーメール）が不足しています。");
@@ -185,9 +175,9 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
   const handleNavigate = (key) => {
     if (key === 'dashboard') navigate('/');
     else if (key === 'sessions') navigate('/sessions');
-    else if (key === 'create') navigate('/create-session'); // セッション作成ページのパスを仮定
+    else if (key === 'create') navigate('/create-session'); 
     else if (key === 'profile') navigate('/profile');
-    else if (key === 'ai-chat') navigate('/ai-chat'); // AI相談ページのパスを仮定
+    else if (key === 'ai-chat') navigate('/ai-chat'); 
   };
 
   // ローディング中の表示
@@ -195,7 +185,7 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
     return (
       <>
         <Header
-          currentPage="approval" // ヘッダーでこのページがアクティブになることは通常ないが、識別用に設定
+          currentPage="approval" 
           onNavigate={handleNavigate}
           user={user}
           userProfile={userProfile}
@@ -207,7 +197,6 @@ export default function ApprovalPage({ user }) { // 親コンポーネントか�
     );
   }
 
-  // エラー時の表示
   if (error) {
     return (
       <>
