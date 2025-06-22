@@ -58,7 +58,6 @@ export default function ApprovalPage({ user }) {
         const sessionDocRef = doc(db, 'sessions', sessionId);
         const requesterUserDocRef = doc(db, 'users', requesterId);
         const notificationDocRef = doc(db, 'notifications', `${sessionId}_${requesterId}`); 
-        console.log("✅ 通知ドキュメント参照:", notificationDocRef.path); 
 
         const [sessionSnap, requesterUserSnap, notificationSnap] = await Promise.all([
           getDoc(sessionDocRef),
@@ -94,37 +93,41 @@ export default function ApprovalPage({ user }) {
     fetchData();
   }, [sessionId, requesterId]); 
 
-  const sendEmailToApplicant = async (
-    targetRequesterEmail, 
-    targetRequesterName, 
-    targetSessionTitle,  
-    targetSessionDate,   
-    targetRequestType,    
-    decisionType,         
-    targetOwnerEmail      
-  ) => {
-    let templateId = 'template_wmkriqn';
+    const sendEmailToApplicant = async (
+    targetRequesterEmail,
+    targetRequesterName,
+    targetSessionTitle,
+    targetSessionDate,
+    targetRequestType,
+    decisionType,
+    targetOwnerEmail
+    ) => {
+    const approvedTemplateId = 'template_wntd5x9';   
+    const rejectedTemplateId = 'template_xlcz1vf'; 
+
+    const templateId = decisionType === 'approved' ? approvedTemplateId : rejectedTemplateId;
 
     try {
-      await emailjs.send(
-        'service_a9mr7c2', 
-        templateId,        
+        await emailjs.send(
+        'service_axahjrs', 
+        templateId,
         {
-          to_email: targetRequesterEmail,
-          requesterName: targetRequesterName,
-          sessionTitle: targetSessionTitle,
-          sessionDate: targetSessionDate,
-          requestType: targetRequestType,
-          ownerEmail: targetOwnerEmail,
-          name: 'DisCuss', 
-          email: targetOwnerEmail
+            to_email: targetRequesterEmail,
+            requesterName: targetRequesterName,
+            sessionTitle: targetSessionTitle,
+            sessionDate: targetSessionDate,
+            requestType: targetRequestType,
+            ownerEmail: targetOwnerEmail,
+            name: 'DisCuss',
+            email: targetOwnerEmail
         },
-        '7fDpG5aIjSV3qnE5F' 
-      );
+        'cX_QxGBbnmjHYDS0D' 
+        );
     } catch (err) {
-      console.error(` メール送信エラー (${decisionType}):`, err);
+        console.error(`メール送信エラー (${decisionType}):`, err);
     }
-  };
+    };
+
 
   const handleDecision = async (decision) => {
     if (!session || !profile) {
