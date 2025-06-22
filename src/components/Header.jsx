@@ -15,11 +15,8 @@ export default function Header({ currentPage, onNavigate, user, userProfile, sea
     { name: 'セッション一覧', key: 'sessions' },
     { name: 'セッション作成', key: 'create' },
     { name: 'AI相談/GD', key: 'ai-chat' },
-<<<<<<< Updated upstream
-    { name: 'プロフィール', key: 'profile' },
-=======
     { name: 'プロフィール', key: 'profile' }
->>>>>>> Stashed changes
+
   ];
 
   useEffect(() => {
