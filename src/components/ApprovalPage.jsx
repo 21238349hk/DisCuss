@@ -58,7 +58,7 @@ export default function ApprovalPage({ user }) {
         const sessionDocRef = doc(db, 'sessions', sessionId);
         const requesterUserDocRef = doc(db, 'users', requesterId);
         const notificationDocRef = doc(db, 'notifications', `${sessionId}_${requesterId}`); 
-
+        console.log("通知ドキュメント参照:", notificationDocRef.path); 
         const [sessionSnap, requesterUserSnap, notificationSnap] = await Promise.all([
           getDoc(sessionDocRef),
           getDoc(requesterUserDocRef),

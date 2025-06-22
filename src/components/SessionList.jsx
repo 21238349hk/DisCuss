@@ -22,9 +22,6 @@ function SessionList({ currentUser, searchQuery }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRequests, setSubmittedRequests] = useState({});
 
-  console.log("ApprovalPage loaded.");
-  // console.log("sessionId from URL:", sessionId);
-  // console.log("requesterId from URL:", requesterId);
 
   useEffect(() => {
     const q = query(collection(db, 'sessions'), orderBy('session_datetime', 'asc'));
@@ -109,7 +106,7 @@ function SessionList({ currentUser, searchQuery }) {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'notifications'), {
+      await setDoc(doc(db, 'notifications', `${selectedSession.id}_${currentUser.uid}`), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
