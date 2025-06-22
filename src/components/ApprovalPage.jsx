@@ -111,7 +111,7 @@ export default function ApprovalPage({ user }) {
     decisionType,         
     targetOwnerEmail      
   ) => {
-    let templateId = 'template_wmkriqn'; // 承認／拒否共通テンプレート
+    let templateId = 'template_wmkriqn';
 
     try {
       await emailjs.send(
@@ -156,7 +156,7 @@ export default function ApprovalPage({ user }) {
         if (notificationData.requesterEmail && notificationData.type && session.userEmail) {
           console.log("📤 メール送信対象:", {
             requesterEmail: notificationData.requesterEmail,
-            requesterName: profile.name,
+            requesterName: profile.displayName,
             sessionTitle: session.title,
             sessionDate: session.session_datetime.toDate().toLocaleString('ja-JP'),
             type: notificationData.type,
@@ -165,7 +165,7 @@ export default function ApprovalPage({ user }) {
 
           await sendEmailToApplicant(
             notificationData.requesterEmail,
-            profile.name || notificationData.requesterEmail, 
+            profile.displayName || notificationData.requesterEmail, 
             session.title,
             new Date(session.session_datetime.toDate()).toLocaleString('ja-JP'),
             notificationData.type, 
@@ -259,17 +259,25 @@ export default function ApprovalPage({ user }) {
           <p><strong>タイトル:</strong> {session.title}</p>
           <p><strong>開催日:</strong> {new Date(session.session_datetime.toDate()).toLocaleString('ja-JP')}</p>
         </div>
+
         <div className="section-card">
           <h2>申請者プロフィール</h2>
-          <p><strong>名前:</strong> {profile.name || 'N/A'}</p>
-          <p><strong>所属:</strong> {profile.affiliation || 'N/A'}</p>
+          <p><strong>氏名:</strong> {profile.displayName || 'N/A'}</p>
+          <p><strong>大学:</strong> {profile.university || 'N/A'}</p>
+          <p><strong>専攻:</strong> {profile.faculty || profile.department || 'N/A'}</p>
           <p><strong>自己紹介:</strong> {profile.bio || 'N/A'}</p>
         </div>
+
         <div className="decision-buttons">
           <button className="approve" onClick={() => handleDecision('approved')}>承認</button>
           <button className="reject" onClick={() => handleDecision('rejected')}>拒否</button>
         </div>
-        {status && <p className={`status-message ${status.includes('失敗') || status.includes('エラー') ? 'error' : ''}`}>{status}</p>}
+
+        {status && (
+          <p className={`status-message ${status.includes('失敗') || status.includes('エラー') ? 'error' : ''}`}>
+            {status}
+          </p>
+        )}
       </div>
     </>
   );
