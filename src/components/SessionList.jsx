@@ -10,8 +10,8 @@ import {
   onSnapshot,
   getDocs,
   where,
-  setDoc,         
-  doc             
+  addDoc, // setDocではなくaddDocを使用
+  // doc, // docはaddDocを使用する場合は不要になることが多い
 } from 'firebase/firestore';
 
 
@@ -72,13 +72,13 @@ function SessionList({ currentUser, searchQuery }) {
   }, [currentUser]);
 
   const filteredSessions = sessions.filter(session => {
-  const query = searchQuery.toLowerCase();
-  return (
-    session.title?.toLowerCase().includes(query) ||
-    session.description?.toLowerCase().includes(query) ||
-    session.discussion_theme?.toLowerCase().includes(query)
-  );
-});
+    const query = searchQuery.toLowerCase();
+    return (
+      session.title?.toLowerCase().includes(query) ||
+      session.description?.toLowerCase().includes(query) ||
+      session.discussion_theme?.toLowerCase().includes(query)
+    );
+  });
 
 
   const openModal = (session, type) => {
@@ -108,7 +108,8 @@ function SessionList({ currentUser, searchQuery }) {
 
     setIsSubmitting(true);
     try {
-      await setDoc(doc(db, 'notifications', `${selectedSession.id}_${currentUser.uid}`), {
+      // notifications コレクションにドキュメントを追加し、その ID を取得
+      const docRef = await addDoc(collection(db, 'notifications'), {
         sessionId: selectedSession.id,
         type: requestType,
         timestamp: new Date(),
@@ -119,12 +120,13 @@ function SessionList({ currentUser, searchQuery }) {
         userEmail: selectedSession.userEmail // セッションオーナーのメールアドレス
       });
 
+      // メール送信時に、上記で作成したドキュメントの ID を渡す
       await sendEmailToOwner(
         selectedSession.userEmail,
         selectedSession.title,
         currentUser.email || 'anonymous@example.com',
         requestType,
-        docRef.id
+        docRef.id // ★修正: ここで通知ドキュメントの ID を渡す
       );
 
       await fetchSubmittedRequests();
@@ -150,7 +152,7 @@ function SessionList({ currentUser, searchQuery }) {
         <p>まだセッションがありません。</p>
       ) : (
         <ul className="session-list">
-        {filteredSessions.map((session) => {
+          {filteredSessions.map((session) => {
             const requestStatus = submittedRequests[session.id];
             return (
               <li key={session.id} className="session-item float-animate">
