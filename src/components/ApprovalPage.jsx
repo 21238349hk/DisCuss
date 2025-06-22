@@ -22,9 +22,6 @@ export default function ApprovalPage({ user }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [userProfile, setUserProfile] = useState(null); 
 
-  console.log("✅ URLから取得した sessionId:", sessionId);
-  console.log("✅ URLから取得した requesterId:", requesterId);
-
   useEffect(() => {
     if (!user || !user.uid) {
       setUserProfile(null); 
@@ -70,7 +67,6 @@ export default function ApprovalPage({ user }) {
         ]);
 
         if (sessionSnap.exists()) {
-          console.log("✅ セッション情報取得成功:", sessionSnap.data());
           setSession(sessionSnap.data());
         } else {
           setError('セッション情報が見つかりません。');
@@ -78,18 +74,14 @@ export default function ApprovalPage({ user }) {
         }
 
         if (requesterUserSnap.exists()) {
-          console.log("✅ 申請者プロフィール取得成功:", requesterUserSnap.data());
           setProfile(requesterUserSnap.data());
         } else {
-          console.warn("⚠️ 申請者プロフィールが見つかりません。requesterId:", requesterId);
           setError(prev => prev ? prev + ' 申請者プロフィールが見つかりません。' : '申請者プロフィールが見つかりません。');
           return; 
         }
 
         if (!notificationSnap.exists()) {
-          console.warn("⚠️ 通知ドキュメントが見つかりません:", notificationDocRef.path);
         } else {
-          console.log("✅ 通知ドキュメント取得成功:", notificationSnap.data());
         }
 
       } catch (err) {
@@ -129,9 +121,8 @@ export default function ApprovalPage({ user }) {
         },
         '7fDpG5aIjSV3qnE5F' 
       );
-      console.log(`📤 申請者へのメール送信成功 (${decisionType})`);
     } catch (err) {
-      console.error(`❌ メール送信エラー (${decisionType}):`, err);
+      console.error(` メール送信エラー (${decisionType}):`, err);
     }
   };
 
@@ -144,17 +135,15 @@ export default function ApprovalPage({ user }) {
     try {
       const notificationRef = doc(db, 'notifications', `${sessionId}_${requesterId}`);
       const notifDoc = await getDoc(notificationRef);
-      console.log("📦 通知データ取得:", notifDoc.exists());
 
       if (notifDoc.exists()) {
         const notificationData = notifDoc.data();
-        console.log("✅ 通知データ内容:", notificationData);
 
         await updateDoc(notifDoc.ref, { status: decision });
         setStatus(`申請を「${decision === 'approved' ? '承認' : '拒否'}」に更新しました。`);
 
         if (notificationData.requesterEmail && notificationData.type && session.userEmail) {
-          console.log("📤 メール送信対象:", {
+          console.log("メール送信対象:", {
             requesterEmail: notificationData.requesterEmail,
             requesterName: profile.displayName,
             sessionTitle: session.title,
@@ -173,7 +162,7 @@ export default function ApprovalPage({ user }) {
             session.userEmail 
           );
         } else {
-          console.warn("⚠️ メール送信に必要な情報が不足しています");
+          console.warn("メール送信に必要な情報が不足しています");
           setStatus(prev => prev + ' (メールは送信されませんでした)');
         }
 
@@ -181,7 +170,7 @@ export default function ApprovalPage({ user }) {
         setStatus('エラー: 対応する申請ドキュメントが見つかりませんでした。申請IDが正しいか確認してください。');
       }
     } catch (err) {
-      console.error("❌ ステータス更新またはメール送信エラー:", err);
+      console.error("ステータス更新またはメール送信エラー:", err);
       setStatus('申請ステータスの更新に失敗しました。詳細はコンソールを確認してください。');
     }
   };
