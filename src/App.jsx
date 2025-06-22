@@ -10,6 +10,7 @@ import CreateSession from './components/CreateSession';
 import Profile from './components/Profile';
 import Login from './components/Login';
 import AIChatPage from './components/AIChatPage';
+import AIChatPageFirebase from './components/AIChatPageFirebase';
 import ApprovalPage from './components/ApprovalPage';
 import { useLocation } from 'react-router-dom';
 import '../src/styles/App.css';
@@ -77,6 +78,8 @@ function App() {
         return <Profile onNavigate={setCurrentPage} user={user} />;
       case 'ai-chat':
         return <AIChatPage />;
+      case 'ai-chat-firebase':
+        return <AIChatPageFirebase />;
       default:
         return <Dashboard onNavigate={setCurrentPage} user={user} />;
     }

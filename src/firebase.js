@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore"; // 【追加】Firestoreのインポートを元に戻す
+import { getFunctions } from "firebase/functions";
 
 // ご自身のFirebaseプロジェクトの設定情報に置き換えてください
 const firebaseConfig = {
@@ -21,3 +22,4 @@ const app = initializeApp(firebaseConfig);
 // これにより、他のコンポーネントから簡単に利用できるようになる
 export const auth = getAuth(app);
 export const db = getFirestore(app); // 【追加】dbのエクスポートを元に戻す
+export const functions = getFunctions(app);

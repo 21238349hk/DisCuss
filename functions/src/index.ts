@@ -7,22 +7,57 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import {onRequest} from "firebase-functions/v2/https";
+import {onRequest, onCall} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import axios from "axios";
 import cors from "cors";
-import * as dotenv from "dotenv";
-
-// .envファイルから環境変数を読み込み
-dotenv.config();
+import {GoogleGenerativeAI} from "@google/generative-ai";
+import * as functions from "firebase-functions";
 
 // CORSミドルウェアを初期化
 const corsHandler = cors({origin: true});
 
 // 環境変数を定義（Firebaseに設定した大文字のキー名に合わせる）
-const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID;
-const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET;
-const ZOOM_ACCOUNT_ID = process.env.ZOOM_ACCOUNT_ID;
+const ZOOM_CLIENT_ID = functions.config().zoom?.client_id;
+const ZOOM_CLIENT_SECRET = functions.config().zoom?.client_secret;
+const ZOOM_ACCOUNT_ID = functions.config().zoom?.account_id;
+const GEMINI_API_KEY = functions.config().gemini?.api_key;
+
+// Google Generative AIを初期化
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY || "");
+
+/**
+ * AIチャット機能の呼び出し可能関数（共有版）
+ */
+export const askSharedGemini = onCall(async (request) => {
+  try {
+    const {message, userId = 'anonymous'} = request.data;
+    
+    if (!message) {
+      throw new Error("メッセージが提供されていません");
+    }
+
+    if (!GEMINI_API_KEY) {
+      throw new Error("Gemini APIキーが設定されていません");
+    }
+
+    const model = genAI.getGenerativeModel({model: "gemini-1.5-flash"});
+    
+    const result = await model.generateContent(`あなたは就活中の学生に対して、グループディスカッション（GD）対策の相談に答えるAIです。企業がGDで何を見ているのか、面接との違いなどを、やさしく・実践的にアドバイスしてください。文字数は多くならないように気をつけてください\n\n${message}`);
+    const response = await result.response;
+    const text = response.text();
+
+    logger.info(`AIチャットが正常に実行されました (User: ${userId})`);
+    
+    return {
+      success: true,
+      response: text
+    };
+  } catch (error) {
+    logger.error("AIチャットでエラーが発生しました:", error);
+    throw new Error(error instanceof Error ? error.message : "Unknown error");
+  }
+});
 
 /**
  * Zoom APIのアクセストークンを取得する関数
@@ -59,9 +94,9 @@ async function getZoomAccessToken() {
 }
 
 /**
- * Zoomミーティング作成のHTTPトリガー関数
+ * Zoomミーティング作成のHTTPトリガー関数（共有版）
  */
-export const createZoomMeeting = onRequest({
+export const createSharedZoomMeeting = onRequest({
   // フロントエンド(http://localhost:5173など)からのアクセスを許可
   cors: true,
 }, async (req, res) => {
@@ -74,13 +109,15 @@ export const createZoomMeeting = onRequest({
     }
 
     try {
+      const {topic, userId = 'anonymous'} = req.body;
+      
       const accessToken = await getZoomAccessToken();
-      const topic = req.body.topic || "新規ディスカッションセッション";
+      const meetingTopic = topic || "新規ディスカッションセッション";
 
       const zoomResponse = await axios.post(
         "https://api.zoom.us/v2/users/me/meetings",
         {
-          topic: topic,
+          topic: meetingTopic,
           type: 2, // スケジュールされたミーティング
           duration: 60,
           settings: {
@@ -97,7 +134,7 @@ export const createZoomMeeting = onRequest({
         },
       );
 
-      logger.info("Zoomミーティングが正常に作成されました。");
+      logger.info(`Zoomミーティングが正常に作成されました (User: ${userId})`);
       res.status(200).json({join_url: zoomResponse.data.join_url});
     } catch (error) {
       logger.error("Zoomミーティングの作成に失敗しました:", error);

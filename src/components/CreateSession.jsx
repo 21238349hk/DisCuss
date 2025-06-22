@@ -5,6 +5,8 @@ import {
   doc, getDoc, updateDoc
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import { createSharedZoomMeeting } from '../config/shared-api';
+import { createMockZoomMeeting, getManualZoomUrl } from '../config/zoom-proxy';
 import '../styles/SessionCreateForm.css';
 
 function SessionCreateForm({ onNavigate }) {
@@ -38,14 +40,44 @@ function SessionCreateForm({ onNavigate }) {
     setIsIssuingUrl(true);
     setError(null);
     try {
-      const response = await fetch('https://us-central1-gd-tanyao.cloudfunctions.net/createZoomMeeting', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: formData.title || '新しいセッション' }),
-      });
-      if (!response.ok) throw new Error((await response.json()).error || 'Zoom URLの発行に失敗しました。');
-      const data = await response.json();
-      setFormData(prevData => ({ ...prevData, zoom_link: data.join_url }));
+      const userId = user?.uid || 'anonymous';
+      
+      // まず実際のZoom APIを試す
+      try {
+        const joinUrl = await createSharedZoomMeeting(formData.title || '新しいセッション', userId);
+        setFormData(prevData => ({ ...prevData, zoom_link: joinUrl }));
+        return;
+      } catch (zoomError) {
+        console.log('Zoom API failed, trying alternatives:', zoomError.message);
+        
+        // CORSエラーの場合、代替案を提供
+        if (zoomError.message.includes('CORS') || zoomError.message.includes('Failed to fetch')) {
+          const choice = confirm(
+            'Zoom APIに直接アクセスできません（CORS制限）。\n\n' +
+            '選択してください:\n' +
+            'OK: モックURLを使用（開発用）\n' +
+            'キャンセル: 手動でURLを入力'
+          );
+          
+          if (choice) {
+            // モックURLを使用
+            const mockUrl = await createMockZoomMeeting(formData.title || '新しいセッション');
+            setFormData(prevData => ({ ...prevData, zoom_link: mockUrl }));
+            setMessage('モックZoom URLが生成されました（開発用）');
+          } else {
+            // 手動入力
+            const manualUrl = getManualZoomUrl();
+            if (manualUrl) {
+              setFormData(prevData => ({ ...prevData, zoom_link: manualUrl }));
+              setMessage('手動でZoom URLが入力されました');
+            }
+          }
+          return;
+        }
+        
+        // その他のエラーの場合は元のエラーを表示
+        throw zoomError;
+      }
     } catch (err) {
       setError(err.message);
     } finally {
