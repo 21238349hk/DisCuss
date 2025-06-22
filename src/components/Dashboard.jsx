@@ -8,7 +8,7 @@ import {
   MapPin,
   Video
 } from 'lucide-react';
-import { getDocs, collection, query, orderBy, limit, addDoc,where } from 'firebase/firestore';
+import { getDocs, collection, query, orderBy, limit, addDoc, where, doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase-config';
 import emailjs from 'emailjs-com';
 import '../styles/Dashboard.css';
@@ -38,25 +38,23 @@ export default function Dashboard({ onNavigate, user }) {
       try {
         const sessionsCollectionRef = collection(db, 'sessions');
         const notificationsCollectionRef = collection(db, 'notifications');
-        const userDocRef = doc(db, 'users', user.uid); // ユーザーのドキュメント参照を取得
+        const userDocRef = doc(db, 'users', user.uid); // ★現在のユーザーのドキュメント参照
 
         // ★ 統計情報の計算 (Firebaseから取得したデータに基づく)
         let joinedCount = 0; // 参加セッション数
         let createdCount = 0; // 作成セッション数
         let evaluationScores = []; // 評価スコア
 
-        const allSessionsSnapshot = await getDocs(sessionsCollectionRef);
-        allSessionsSnapshot.forEach((sessionDoc) => {
+        // sessionsコレクションから、参加セッション数、作成セッション数、評価を計算
+        const sessionsSnapshot = await getDocs(sessionsCollectionRef);
+        sessionsSnapshot.forEach((sessionDoc) => {
           const data = sessionDoc.data();
-          // 参加セッション数を計算
           if (data.participants && data.participants.includes(user.uid)) {
             joinedCount++;
           }
-          // 作成セッション数を計算
           if (data.createdBy === user.uid) {
             createdCount++;
           }
-          // 評価スコアを収集
           const score = data.evaluations?.[user.uid];
           if (typeof score === 'number') {
             evaluationScores.push(score);
@@ -88,7 +86,7 @@ export default function Dashboard({ onNavigate, user }) {
           { label: '参加セッション数', value: String(joinedCount), icon: Users, color: 'bg-blue-500' },
           { label: '作成セッション数', value: String(createdCount), icon: Trophy, color: 'bg-yellow-500' },
           { label: '申請セッション数', value: String(appliedSessionsCount), icon: Calendar, color: 'bg-green-500' },
-          { label: '平均評価', value: '99.9', icon: TrendingUp, color: 'bg-purple-500' }
+          { label: '平均評価', value: avgScore, icon: TrendingUp, color: 'bg-purple-500' }
         ]);
 
         // 右側：Firebaseから新しいセッションを2件取得
