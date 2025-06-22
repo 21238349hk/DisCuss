@@ -1,25 +1,26 @@
-import React, { useEffect, useState } from 'react'; 
-import { useSearchParams, useNavigate } from 'react-router-dom'; 
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase-config';
 import '../styles/ApprovalPage.css';
-import Header from './Header'; 
+import Header from './Header';
+import emailjs from 'emailjs-com';
 
-export default function ApprovalPage({ user }) { 
+export default function ApprovalPage({ user }) {
   const [params] = useSearchParams();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const sessionId = params.get("sessionId");
   const requesterId = params.get("requesterId");
 
   const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(null); 
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useState(null); 
 
   useEffect(() => {
     if (user && user.uid) {
@@ -36,13 +37,13 @@ export default function ApprovalPage({ user }) {
       };
       fetchUserProfile();
     }
-  }, [user]); 
+  }, [user]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const sessionSnap = await getDoc(doc(db, 'sessions', sessionId));
-        const userSnap = await getDoc(doc(db, 'users', requesterId));
+        const requesterUserSnap = await getDoc(doc(db, 'users', requesterId));
 
         if (sessionSnap.exists()) {
           setSession(sessionSnap.data());
@@ -50,8 +51,8 @@ export default function ApprovalPage({ user }) {
           setError('セッション情報が見つかりません。');
         }
 
-        if (userSnap.exists()) {
-          setProfile(userSnap.data());
+        if (requesterUserSnap.exists()) {
+          setProfile(requesterUserSnap.data());
         } else {
           setError(prev => prev ? prev + ' 申請者プロフィールが見つかりません。' : '申請者プロフィールが見つかりません。');
         }
@@ -65,14 +66,64 @@ export default function ApprovalPage({ user }) {
     fetchData();
   }, [sessionId, requesterId]);
 
+  const sendEmailToApplicant = async (
+    requesterEmail,
+    requesterName,
+    sessionTitle,
+    sessionDate,
+    requestType,
+    decision, 
+    ownerEmail
+  ) => {
+    let templateId;
+    if (decision === 'approved') {
+      templateId = 'template_wmkriqn'; 
+    } else {
+      templateId = 'template_wmkriqn'; 
+    }
+
+    try {
+      await emailjs.send(
+        'service_a9mr7c2', 
+        templateId, 
+        {
+          to_email: requesterEmail,
+          requesterName: requesterName,
+          sessionTitle: sessionTitle,
+          sessionDate: sessionDate,
+          requestType: requestType,
+          decision: decision === 'approved' ? '承認' : '拒否', 
+          ownerEmail: ownerEmail
+        },
+        '7fDpG5aIjSV3qnE5F' 
+      );
+      console.log(`申請者へのメール送信成功 (${decision}通知)！`);
+    } catch (err) {
+      console.error(`申請者へのメール送信エラー (${decision}通知):`, err);
+    }
+  };
+
+
   const handleDecision = async (decision) => {
     try {
       const notificationRef = doc(db, 'notifications', `${sessionId}_${requesterId}`);
       const notifDoc = await getDoc(notificationRef);
 
       if (notifDoc.exists()) {
+        const notificationData = notifDoc.data();
         await updateDoc(notifDoc.ref, { status: decision });
         setStatus(`申請を「${decision === 'approved' ? '承認' : '拒否'}」に更新しました。`);
+
+        await sendEmailToApplicant(
+          notificationData.requesterEmail,
+          profile?.name || notificationData.requesterEmail,
+          session.title,
+          new Date(session.session_datetime.toDate()).toLocaleString('ja-JP'),
+          notificationData.type,
+          decision, 
+          session.userEmail
+        );
+
       } else {
         setStatus('エラー: 対応する申請ドキュメントが見つかりませんでした。');
       }
@@ -96,7 +147,7 @@ export default function ApprovalPage({ user }) {
     return (
       <>
         <Header
-          currentPage="approval" 
+          currentPage="approval"
           onNavigate={handleNavigate}
           user={user}
           userProfile={userProfile}
@@ -141,14 +192,14 @@ export default function ApprovalPage({ user }) {
   }
 
   return (
-    <> 
+    <>
       <Header
-        currentPage="approval" 
+        currentPage="approval"
         onNavigate={handleNavigate}
-        user={user} 
-        userProfile={userProfile} 
-        searchQuery={searchQuery} 
-        setSearchQuery={setSearchQuery} 
+        user={user}
+        userProfile={userProfile}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
       <div className="approval-container">
         <h1>申請承認ページ</h1>
