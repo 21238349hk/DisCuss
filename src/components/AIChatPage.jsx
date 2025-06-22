@@ -18,16 +18,6 @@ export default function AIChatPage() {
     setLoading(true);
 
     try {
-<<<<<<< HEAD
-      const response = await callGeminiAPI(input);
-      
-      const aiMessage = {
-        role: 'ai',
-        text: response || 'AIからの返答がありませんでした。'
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-=======
       const endpoint = mode === 'gd' ? '/api/ask-gemini-gd' : '/api/ask-gemini';
       const res = await fetch(`http://localhost:3001${endpoint}`, {
         method: 'POST',
@@ -47,7 +37,6 @@ export default function AIChatPage() {
         };
         setMessages((prev) => [...prev, aiMessage]);
       }
->>>>>>> 4d6607a251a66138549cc8f51eb9b850dab7b0f4
     } catch (error) {
       console.error('Gemini APIエラー:', error);
       setMessages((prev) => [
