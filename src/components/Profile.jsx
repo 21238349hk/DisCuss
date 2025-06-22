@@ -4,7 +4,7 @@ import {
   Edit2, Mail, CaseSensitive as University, GraduationCap, Target, Star,
   Award, Calendar, TrendingUp, Users
 } from 'lucide-react';
-import { db } from '../firebase-config'; // firebase.js ではなく firebase-config.js を推奨
+import { db } from '../firebase-config'; 
 import { doc, getDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
 
 export default function Profile({ onNavigate, user }) {
@@ -49,14 +49,12 @@ export default function Profile({ onNavigate, user }) {
       try {
         const sessionsCollectionRef = collection(db, 'sessions');
         const notificationsCollectionRef = collection(db, 'notifications');
-        const userDocRef = doc(db, 'users', user.uid); // ★現在のユーザーのドキュメント参照
+        const userDocRef = doc(db, 'users', user.uid);
 
-        // ★ 統計情報の計算 (Firebaseから取得したデータに基づく)
-        let joinedCount = 0; // 参加セッション数
-        let createdCount = 0; // 作成セッション数
-        let evaluationScores = []; // 評価スコア
+        let joinedCount = 0;
+        let createdCount = 0; 
+        let evaluationScores = []; 
 
-        // sessionsコレクションから、参加セッション数、作成セッション数、評価を計算
         const sessionsSnapshot = await getDocs(sessionsCollectionRef);
         sessionsSnapshot.forEach((sessionDoc) => {
           const data = sessionDoc.data();
@@ -72,7 +70,6 @@ export default function Profile({ onNavigate, user }) {
           }
         });
 
-        // 申請セッション数を取得
         const notificationsQuery = query(
           notificationsCollectionRef,
           where('requesterId', '==', user.uid)
@@ -80,7 +77,6 @@ export default function Profile({ onNavigate, user }) {
         const notificationsSnapshot = await getDocs(notificationsQuery);
         const appliedSessionsCount = notificationsSnapshot.size;
 
-        // 平均評価を計算
         const avgScore = evaluationScores.length > 0
           ? (evaluationScores.reduce((a, b) => a + b, 0) / evaluationScores.length).toFixed(1)
           : '-';
@@ -97,8 +93,8 @@ export default function Profile({ onNavigate, user }) {
         setStats([
           { label: '参加セッション数', value: String(joinedCount), icon: Calendar },
           { label: '作成セッション数', value: String(createdCount), icon: Award },
-          { label: '申請セッション数', value: String(appliedSessionsCount), icon: Star }, // ★修正: ここに申請数を設定
-          { label: '平均評価', value: String(4.4), icon: TrendingUp } // 平均評価は既存のスコアから
+          { label: '申請セッション数', value: String(appliedSessionsCount), icon: Star }, 
+          { label: '平均評価', value: String(4.4), icon: TrendingUp } 
         ]);
       } catch (err) {
         console.error("統計取得エラー:", err);
@@ -118,7 +114,6 @@ export default function Profile({ onNavigate, user }) {
     try {
       const docRef = doc(db, 'users', user.uid);
 
-      // 保存時に最新の統計情報を取得して保存する
       const sessionsSnapshot = await getDocs(collection(db, 'sessions'));
       let joined = 0;
       let created = 0;
@@ -148,7 +143,7 @@ export default function Profile({ onNavigate, user }) {
         stats: {
           joinedSessions: joined,
           createdSessions: created,
-          appliedSessions: appliedSessionsCount, // ★追加: appliedSessions も保存
+          appliedSessions: appliedSessionsCount,
           avgEvaluation: avgScore
         }
       }, { merge: true });

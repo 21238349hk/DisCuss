@@ -149,7 +149,6 @@ function SessionList({ currentUser, searchQuery }) {
         currentUser.uid
       );
 
-      // ユーザーデータに申請セッションを記録
       const userStatsRef = doc(db, 'users', currentUser.uid);
       await updateDoc(userStatsRef, {
         'stats.joinedSessions': increment(1)

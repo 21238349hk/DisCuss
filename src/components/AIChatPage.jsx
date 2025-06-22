@@ -6,8 +6,7 @@ export default function AIChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('consult'); // 'consult' or 'gd'
-
+  const [mode, setMode] = useState('consult'); 
   const handleSend = async () => {
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
@@ -51,7 +50,7 @@ export default function AIChatPage() {
   const handleModeToggle = () => {
     const newMode = mode === 'consult' ? 'gd' : 'consult';
     setMode(newMode);
-    setMessages([]); // モード切替時に履歴をリセット
+    setMessages([]); 
   };
 
   return (
