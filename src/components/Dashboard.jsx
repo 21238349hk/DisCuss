@@ -31,78 +31,127 @@ export default function Dashboard({ onNavigate, user }) {
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
+  // 修正箇所だけ抽出（全体の差分）
 
-    const fetchData = async () => {
-      try {
-        const sessionsCollectionRef = collection(db, 'sessions');
-        const notificationsCollectionRef = collection(db, 'notifications');
-        const userDocRef = doc(db, 'users', user.uid); // ★現在のユーザーのドキュメント参照
+useEffect(() => {
+  if (!user) return;
 
-        // ★ 統計情報の計算 (Firebaseから取得したデータに基づく)
-        let joinedCount = 0; // 参加セッション数
-        let createdCount = 0; // 作成セッション数
-        let evaluationScores = []; // 評価スコア
+  const fetchData = async () => {
+    try {
+      const sessionsCollectionRef = collection(db, 'sessions');
+      const notificationsCollectionRef = collection(db, 'notifications');
+      const userDocRef = doc(db, 'users', user.uid);
 
-        // sessionsコレクションから、参加セッション数、作成セッション数、評価を計算
-        const sessionsSnapshot = await getDocs(sessionsCollectionRef);
-        sessionsSnapshot.forEach((sessionDoc) => {
-          const data = sessionDoc.data();
-          if (data.participants && data.participants.includes(user.uid)) {
-            joinedCount++;
-          }
-          if (data.createdBy === user.uid) {
-            createdCount++;
-          }
-          const score = data.evaluations?.[user.uid];
-          if (typeof score === 'number') {
-            evaluationScores.push(score);
-          }
+      let joinedCount = 0;
+      let createdCount = 0;
+      let evaluationScores = [];
+
+      const sessionsSnapshot = await getDocs(sessionsCollectionRef);
+      sessionsSnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.participants?.includes(user.uid)) joinedCount++;
+        if (data.createdBy === user.uid) createdCount++;
+        const score = data.evaluations?.[user.uid];
+        if (typeof score === 'number') evaluationScores.push(score);
+      });
+
+      const notifQuery = query(
+        notificationsCollectionRef,
+        where('requesterId', '==', user.uid)
+      );
+      const notifSnapshot = await getDocs(notifQuery);
+
+      const applied = [];
+      const appliedMap = {};
+
+      for (const notifDoc of notifSnapshot.docs) {
+        const notif = notifDoc.data();
+        const sessionDoc = await getDocs(query(
+          collection(db, 'sessions'),
+          where('__name__', '==', notif.sessionId)
+        ));
+
+        sessionDoc.forEach((doc) => {
+          applied.push({ ...doc.data(), id: doc.id });
+          appliedMap[doc.id] = true;
         });
-
-        // 申請セッション数を取得
-        const notificationsQuery = query(
-          notificationsCollectionRef,
-          where('requesterId', '==', user.uid)
-        );
-        const notificationsSnapshot = await getDocs(notificationsQuery);
-        const appliedSessionsCount = notificationsSnapshot.size;
-
-        // 平均評価を計算
-        const avgScore = evaluationScores.length > 0
-          ? (evaluationScores.reduce((a, b) => a + b, 0) / evaluationScores.length).toFixed(1)
-          : '-';
-
-        await setDoc(userDocRef, {
-          stats: {
-            joinedSessions: joinedCount,
-            createdSessions: createdCount,
-            appliedSessions: appliedSessionsCount,
-            avgEvaluation: avgScore
-          }
-        }, { merge: true });
-        setStats([
-          { label: '参加セッション数', value: String(appliedSessionsCount), icon: Users, color: 'bg-blue-500' },
-          { label: '作成セッション数', value: String(createdCount), icon: Trophy, color: 'bg-yellow-500' },
-          { label: '申請セッション数', value: String(joinedCount), icon: Calendar, color: 'bg-green-500' },
-          { label: '平均評価', value: avgScore, icon: TrendingUp, color: 'bg-purple-500' }
-        ]);
-
-        // 右側：Firebaseから新しいセッションを2件取得
-        const sessionsCollection = collection(db, 'sessions');
-        const q = query(sessionsCollection, orderBy('createdAt', 'desc'), limit(2));
-        const snapshot = await getDocs(q);
-        const newSessionsData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-        setNewSessions(newSessionsData);
-
-      } catch (error) {
-        console.error("データ取得に失敗しました", error);
       }
-    };
 
-    fetchData();
-  }, [user]);
+      const avgScore = evaluationScores.length > 0
+        ? (evaluationScores.reduce((a, b) => a + b, 0) / evaluationScores.length).toFixed(1)
+        : '-';
+
+      await setDoc(userDocRef, {
+        stats: {
+          joinedSessions: joinedCount,
+          createdSessions: createdCount,
+          appliedSessions: notifSnapshot.size,
+          avgEvaluation: avgScore
+        }
+      }, { merge: true });
+
+      setStats([
+        { label: '参加セッション数', value: String(joinedCount), icon: Users, color: 'bg-blue-500' },
+        { label: '作成セッション数', value: String(createdCount), icon: Trophy, color: 'bg-yellow-500' },
+        { label: '申請セッション数', value: String(notifSnapshot.size), icon: Calendar, color: 'bg-green-500' },
+        { label: '平均評価', value: avgScore, icon: TrendingUp, color: 'bg-purple-500' }
+      ]);
+      setAppliedSessions(applied);
+
+      // 新しいセッション（申請済みと重複しないように）
+      const q = query(collection(db, 'sessions'), orderBy('createdAt', 'desc'), limit(10));
+      const snapshot = await getDocs(q);
+      const newSessionsData = snapshot.docs
+        .map(doc => ({ ...doc.data(), id: doc.id }))
+        .filter(session => !appliedMap[session.id]);
+      setNewSessions(newSessionsData.slice(0, 2)); // 最新2件に制限
+    } catch (error) {
+      console.error("データ取得に失敗しました", error);
+    }
+  };
+
+  fetchData();
+}, [user]);
+
+const handleConfirm = async () => {
+  if (!selectedSession || !user) return;
+  setIsSubmitting(true);
+
+  const notifId = `${selectedSession.id}_${user.uid}`;
+
+  try {
+    await setDoc(doc(db, 'notifications', notifId), {
+      sessionId: selectedSession.id,
+      type: requestType,
+      timestamp: new Date(),
+      sessionTitle: selectedSession.title,
+      requesterId: user.uid,
+      requesterEmail: user.email,
+      status: 'pending',
+      userEmail: selectedSession.userEmail || 'default_owner@example.com'
+    });
+
+    await sendEmailToOwner(
+      selectedSession.userEmail || 'default_owner@example.com',
+      selectedSession.title,
+      user.email,
+      requestType,
+      selectedSession.id,
+      user.uid
+    );
+
+    alert(`${requestType}申請を送信しました。`);
+  } catch (err) {
+    console.error('通知送信エラー:', err);
+    alert('申請の送信に失敗しました。');
+  } finally {
+    setShowModal(false);
+    setSelectedSession(null);
+    setRequestType('');
+    setIsSubmitting(false);
+  }
+};
+
 
   const openModal = (session, type) => {
     setSelectedSession(session);
@@ -110,154 +159,100 @@ export default function Dashboard({ onNavigate, user }) {
     setShowModal(true);
   };
 
-  const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type) => {
-    const approvalUrl = `https://gd-tanyao.web.app`;
-
-    return emailjs.send(
-      'service_a9mr7c2',
-      'template_opkxshf',
-      {
-        to_email: ownerEmail,
-        sessionTitle,
-        requesterEmail,
-        type,
-        approvalUrl,
-      },
-      '7fDpG5aIjSV3qnE5F'
-    );
-  };
-
-  const handleConfirm = async () => {
-    if (!selectedSession || !user) return;
-
-    setIsSubmitting(true);
-    try {
-      await addDoc(collection(db, 'notifications'), {
-        sessionId: selectedSession.id,
-        type: requestType,
-        timestamp: new Date(),
-        sessionTitle: selectedSession.title,
-        requesterId: user.uid || 'anonymous',
-        requesterEmail: user.email || 'anonymous@example.com',
-        status: 'pending',
-      });
-
-      await sendEmailToOwner(
-        selectedSession.userEmail,
-        selectedSession.title,
-        user.email || 'anonymous@example.com',
-        requestType
+  const sendEmailToOwner = (ownerEmail, sessionTitle, requesterEmail, type, sessionId, requesterId) => {
+      const approvalUrl = `https://gd-tanyao.web.app/approval?sessionId=${sessionId}&requesterId=${requesterId}`;
+  
+      return emailjs.send(
+        'service_a9mr7c2',
+        'template_opkxshf',
+        {
+          to_email: ownerEmail,
+          sessionTitle,
+          requesterEmail,
+          type,
+          approvalUrl,
+        },
+        '7fDpG5aIjSV3qnE5F'
       );
+    };
 
-      alert(`${requestType}申請を送信しました。`);
-    } catch (err) {
-      console.error('通知送信エラー:', err);
-      alert('申請の送信に失敗しました。');
-    } finally {
-      setShowModal(false);
-      setSelectedSession(null);
-      setRequestType('');
-      setIsSubmitting(false);
-    }
-  };
+  // const handleConfirm = async () => {
+  //   if (!selectedSession || !user) return;
+
+  //   setIsSubmitting(true);
+  //   try {
+  //     await setDoc(collection(db, 'notifications'), {
+  //       sessionId: selectedSession.id,
+  //       type: requestType,
+  //       timestamp: new Date(),
+  //       sessionTitle: selectedSession.title,
+  //       requesterId: user.uid || 'anonymous',
+  //       requesterEmail: user.email || 'anonymous@example.com',
+  //       status: 'pending',
+  //     });
+
+  //     await sendEmailToOwner(
+  //       selectedSession.userEmail,
+  //       selectedSession.title,
+  //       user.email || 'anonymous@example.com',
+  //       requestType
+  //     );
+
+  //     alert(`${requestType}申請を送信しました。`);
+  //   } catch (err) {
+  //     console.error('通知送信エラー:', err);
+  //     alert('申請の送信に失敗しました。');
+  //   } finally {
+  //     setShowModal(false);
+  //     setSelectedSession(null);
+  //     setRequestType('');
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="dashboard-header">
-        <h1 className="dashboard-title">
-          おかえりなさい、{user ? user.displayName : 'ゲスト'}さん
-        </h1>
-        <p className="dashboard-subtitle">
-          今日も就活スキルを磨いていきましょう！
-        </p>
-      </div>
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="dashboard-header">
+      <h1 className="dashboard-title">
+        おかえりなさい、{user ? user.displayName : 'ゲスト'}さん
+      </h1>
+      <p className="dashboard-subtitle">
+        今日も就活スキルを磨いていきましょう！
+      </p>
+    </div>
 
-      {/* 統計セクション */}
-      <div className="stats-grid">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="stat-card animate-slide-up"
-            style={{ animationDelay: `${index * 0.1}s` }}
-          >
-            <div className="stat-content">
-              <div className={`stat-icon ${stat.color} bg-animate`}>
-                <stat.icon className="icon-white" />
-              </div>
-              <div className="stat-text">
-                <p className="stat-value">{stat.value}</p>
-                <p className="stat-label">{stat.label}</p>
-              </div>
+    {/* 統計セクション */}
+    <div className="stats-grid">
+      {stats.map((stat, index) => (
+        <div
+          key={index}
+          className="stat-card animate-slide-up"
+          style={{ animationDelay: `${index * 0.1}s` }}
+        >
+          <div className="stat-content">
+            <div className={`stat-icon ${stat.color} bg-animate`}>
+              <stat.icon className="icon-white" />
+            </div>
+            <div className="stat-text">
+              <p className="stat-value">{stat.value}</p>
+              <p className="stat-label">{stat.label}</p>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* セッションセクション */}
-      <div className="session-grid">
-        {/* 申請予定のセッション */}
-        <div className="session-box animate-slide-up" style={{ animationDelay: '0.3s' }}>
-          <div className="session-box-header">
-            <h2 className="session-box-title">申請予定のセッション</h2>
-          </div>
-          <div className="session-box-body">
-            {appliedSessions.length > 0 ? (
-              <div className="session-list">
-                {appliedSessions.map((session, index) => {
-                  const sessionDateTime = session.session_datetime.toDate();
-                  const sessionDate = sessionDateTime.toLocaleDateString('ja-JP');
-                  const startTime = sessionDateTime.toTimeString().substring(0, 5);
-
-                  return (
-                    <div
-                      key={session.id}
-                      className="session-item animate-slide-up"
-                      style={{ animationDelay: `${index * 0.1 + 0.4}s` }}
-                    >
-                      <div className="session-content" style={{ flexGrow: 1 }}>
-                        <div className="session-item-header">
-                          <h3 className="session-title">{session.title}</h3>
-                        </div>
-                        <p><strong>説明:</strong> {session.description}</p>
-                        <p><strong>テーマ:</strong> {session.discussion_theme || 'N/A'}</p>
-                        <p><strong>難易度:</strong> {session.difficulty || 'N/A'}</p>
-                        <p><strong>開催日:</strong> {sessionDate}</p>
-                        <p><strong>時間:</strong> {startTime}〜 ({session.duration_minutes}分)</p>
-                        <p><strong>参加者:</strong> {session.participants.length}/{session.max_participants}人</p>
-                        <p><strong>開催方式:</strong> {session.meeting_method}</p>
-                      </div>
-                      <div className="session-actions" style={{ marginTop: 'auto' }}>
-                        <button className="request-button join" onClick={() => openModal(session, '参加')}>
-                          参加申請
-                        </button>
-                        <button className="request-button observe" onClick={() => openModal(session, '見学')}>
-                          見学申請
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="session-empty animate-slide-up" style={{ animationDelay: '0.5s' }}>
-                <Calendar className="icon-large" />
-                <p>申請予定のセッションがありません</p>
-                <button onClick={() => onNavigate('sessions')} className="button-primary">
-                  セッションを探す
-                </button>
-              </div>
-            )}
-          </div>
         </div>
+      ))}
+    </div>
 
-        {/* 新しいセッション */}
-        <div className="session-box animate-slide-up" style={{ animationDelay: '0.4s' }}>
-          <div className="session-box-header">
-            <h2 className="session-box-title">新しいセッション</h2>
-          </div>
-          <div className="session-box-body">
+    {/* セッションセクション */}
+    <div className="session-grid">
+      {/* 申請済みセッション */}
+      <div className="session-box animate-slide-up" style={{ animationDelay: '0.3s' }}>
+        <div className="session-box-header">
+          <h2 className="session-box-title">申請済みのセッション</h2>
+        </div>
+        <div className="session-box-body">
+          {appliedSessions.length > 0 ? (
             <div className="session-list">
-              {newSessions.map((session, index) => {
+              {appliedSessions.map((session, index) => {
                 const sessionDateTime = session.session_datetime?.toDate();
                 const sessionDate = sessionDateTime?.toLocaleDateString('ja-JP') || 'N/A';
                 const startTime = sessionDateTime?.toTimeString().substring(0, 5) || 'N/A';
@@ -266,12 +261,10 @@ export default function Dashboard({ onNavigate, user }) {
                   <div
                     key={session.id}
                     className="session-item animate-slide-up"
-                    style={{ animationDelay: `${index * 0.1 + 0.5}s` }}
+                    style={{ animationDelay: `${index * 0.1 + 0.4}s` }}
                   >
                     <div className="session-content" style={{ flexGrow: 1 }}>
-                      <div className="session-item-header">
-                        <h3 className="session-title">{session.title}</h3>
-                      </div>
+                      <h3 className="session-title">{session.title}</h3>
                       <p><strong>説明:</strong> {session.description}</p>
                       <p><strong>テーマ:</strong> {session.discussion_theme || 'N/A'}</p>
                       <p><strong>難易度:</strong> {session.difficulty || 'N/A'}</p>
@@ -281,58 +274,107 @@ export default function Dashboard({ onNavigate, user }) {
                       <p><strong>開催方式:</strong> {session.meeting_method}</p>
                     </div>
                     <div className="session-actions" style={{ marginTop: 'auto' }}>
-                      <button className="request-button join" onClick={() => openModal(session, '参加')}>
-                        参加申請
-                      </button>
-                      <button className="request-button observe" onClick={() => openModal(session, '見学')}>
-                        見学申請
+                      <button className="request-button joined" disabled>
+                        申請済み
                       </button>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
-        </div>
-      </div>
-      {/* Quick Action */}
-      <div
-        className="quick-action-container animate-slide-up"
-        style={{ animationDelay: '1s' }}
-      >
-        <div className="quick-action-content">
-          <div className="quick-action-text">
-            <h3 className="quick-action-title">新しいセッションを作成しませんか？</h3>
-            <p className="quick-action-subtext">
-              他の就活生と一緒にスキルアップしましょう
-            </p>
-          </div>
-          <button
-            onClick={() => onNavigate('create')}
-            className="quick-action-button"
-          >
-            セッションを作成
-          </button>
-        </div>
-      </div>
-      {showModal && selectedSession && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>申請の確認</h2>
-            <p><strong>セッション名:</strong> {selectedSession.title}</p>
-            <p><strong>申請種別:</strong> {requestType}</p>
-            <p><strong>開催日:</strong> {selectedSession.session_datetime?.toDate().toLocaleDateString('ja-JP')} {selectedSession.session_datetime?.toDate().toTimeString().substring(0, 5)}〜</p>
-            <div className="modal-actions">
-              <button onClick={handleConfirm} className="button-confirm" disabled={isSubmitting}>
-                {isSubmitting ? '送信中...' : '送信する'}
-              </button>
-              <button onClick={() => setShowModal(false)} className="button-cancel" disabled={isSubmitting}>
-                キャンセル
+          ) : (
+            <div className="session-empty animate-slide-up" style={{ animationDelay: '0.5s' }}>
+              <Calendar className="icon-large" />
+              <p>申請済みのセッションがありません</p>
+              <button onClick={() => onNavigate('sessions')} className="button-primary">
+                セッションを探す
               </button>
             </div>
+          )}
+        </div>
+      </div>
+
+      {/* 新しいセッション */}
+      <div className="session-box animate-slide-up" style={{ animationDelay: '0.4s' }}>
+        <div className="session-box-header">
+          <h2 className="session-box-title">新しいセッション</h2>
+        </div>
+        <div className="session-box-body">
+          <div className="session-list">
+            {newSessions.map((session, index) => {
+              const sessionDateTime = session.session_datetime?.toDate();
+              const sessionDate = sessionDateTime?.toLocaleDateString('ja-JP') || 'N/A';
+              const startTime = sessionDateTime?.toTimeString().substring(0, 5) || 'N/A';
+
+              return (
+                <div
+                  key={session.id}
+                  className="session-item animate-slide-up"
+                  style={{ animationDelay: `${index * 0.1 + 0.5}s` }}
+                >
+                  <div className="session-content" style={{ flexGrow: 1 }}>
+                    <h3 className="session-title">{session.title}</h3>
+                    <p><strong>説明:</strong> {session.description}</p>
+                    <p><strong>テーマ:</strong> {session.discussion_theme || 'N/A'}</p>
+                    <p><strong>難易度:</strong> {session.difficulty || 'N/A'}</p>
+                    <p><strong>開催日:</strong> {sessionDate}</p>
+                    <p><strong>時間:</strong> {startTime}〜 ({session.duration_minutes}分)</p>
+                    <p><strong>参加者:</strong> {session.participants?.length || 0}/{session.max_participants}人</p>
+                    <p><strong>開催方式:</strong> {session.meeting_method}</p>
+                  </div>
+                  <div className="session-actions" style={{ marginTop: 'auto' }}>
+                    <button className="request-button join" onClick={() => openModal(session, '参加')}>
+                      参加申請
+                    </button>
+                    <button className="request-button observe" onClick={() => openModal(session, '見学')}>
+                      見学申請
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      )}
+      </div>
     </div>
-  );
+
+    {/* CTA */}
+    <div className="quick-action-container animate-slide-up" style={{ animationDelay: '1s' }}>
+      <div className="quick-action-content">
+        <div className="quick-action-text">
+          <h3 className="quick-action-title">新しいセッションを作成しませんか？</h3>
+          <p className="quick-action-subtext">
+            他の就活生と一緒にスキルアップしましょう
+          </p>
+        </div>
+        <button onClick={() => onNavigate('create')} className="quick-action-button">
+          セッションを作成
+        </button>
+      </div>
+    </div>
+
+    {/* モーダル確認表示 */}
+    {showModal && selectedSession && (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h2>申請の確認</h2>
+          <p><strong>セッション名:</strong> {selectedSession.title}</p>
+          <p><strong>申請種別:</strong> {requestType}</p>
+          <p>
+            <strong>開催日:</strong> {selectedSession.session_datetime?.toDate().toLocaleDateString('ja-JP')} {selectedSession.session_datetime?.toDate().toTimeString().substring(0, 5)}〜
+          </p>
+          <div className="modal-actions">
+            <button onClick={handleConfirm} className="button-confirm" disabled={isSubmitting}>
+              {isSubmitting ? '送信中...' : '送信する'}
+            </button>
+            <button onClick={() => setShowModal(false)} className="button-cancel" disabled={isSubmitting}>
+              キャンセル
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 }
