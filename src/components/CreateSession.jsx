@@ -1,3 +1,4 @@
+const ZOOM_API_URL = import.meta.env.VITE_ZOOM_API_URL;
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase-config';
 import {
@@ -33,12 +34,14 @@ function SessionCreateForm({ onNavigate }) {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
+  
+  
 
   const handleIssueZoomUrl = async () => {
     setIsIssuingUrl(true);
     setError(null);
     try {
-      const response = await fetch('https://us-central1-gd-tanyao.cloudfunctions.net/createZoomMeeting', {
+      const response = await fetch(ZOOM_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic: formData.title || '新しいセッション' }),
