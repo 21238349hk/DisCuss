@@ -44,13 +44,19 @@ function SessionCreateForm({ onNavigate }) {
       const response = await fetch(ZOOM_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: formData.title || '新しいセッション' }),
+        body: JSON.stringify({ topic: formData.title || '新しいセッション' })
       });
-      if (!response.ok) throw new Error((await response.json()).error || 'Zoom URLの発行に失敗しました。');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Zoom URLの発行に失敗しました。');
+      }
+
       const data = await response.json();
       setFormData(prevData => ({ ...prevData, zoom_link: data.join_url }));
+      setMessage('Zoom URLが正常に発行されました');
     } catch (err) {
-      setError(err.message);
+      setError(`Zoom URL発行エラー: ${err.message}`);
     } finally {
       setIsIssuingUrl(false);
     }
@@ -73,27 +79,27 @@ function SessionCreateForm({ onNavigate }) {
         createdByName: user.displayName || user.email,
         userEmail: user.email,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
+
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
       if (userDocSnap.exists()) {
         const prev = userDocSnap.data()?.stats?.createdSessions || 0;
         await updateDoc(userDocRef, { 'stats.createdSessions': prev + 1 });
       }
+
       setMessage(`セッションが作成されました。ID: ${docRef.id}`);
       setFormData({
         title: '', description: '', discussion_theme: '', difficulty: '',
         session_date: '', start_time: '', duration_minutes: 40, max_participants: 6,
         meeting_method: 'オンライン', zoom_link: ''
       });
-
       setShowSuccessCheck(true);
-        setTimeout(() => {
-          setShowSuccessCheck(false);
-          onNavigate('dashboard');
-      }, 1500);  
-
+      setTimeout(() => {
+        setShowSuccessCheck(false);
+        onNavigate('dashboard');
+      }, 1500);
     } catch (err) {
       setError(`保存に失敗しました: ${err.message}`);
     } finally {
@@ -113,7 +119,7 @@ function SessionCreateForm({ onNavigate }) {
       <label>ディスカッションテーマ</label>
       <input type="text" name="discussion_theme" value={formData.discussion_theme} onChange={handleChange} required />
       <label>難易度</label>
-      <select name="difficulty" value={formData.difficulty} onChange={handleChange}>
+      <select name="difficulty" value={formData.difficulty} onChange={handleChange} required>
         <option value="">選択してください</option>
         <option value="初級">初級</option>
         <option value="中級">中級</option>
@@ -134,14 +140,14 @@ function SessionCreateForm({ onNavigate }) {
     </>,
     <>
       <label>開催方式</label>
-      <select name="meeting_method" value={formData.meeting_method} onChange={handleChange}>
+      <select name="meeting_method" value={formData.meeting_method} onChange={handleChange} required>
         <option value="オンライン">オンライン</option>
         <option value="対面">対面</option>
       </select>
       {formData.meeting_method === 'オンライン' && (
         <>
           <label>Zoom招待リンク:</label>
-          <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} />
+          <input type="url" name="zoom_link" value={formData.zoom_link} onChange={handleChange} required pattern="https?://.+" />
           <button type="button" onClick={handleIssueZoomUrl} disabled={isIssuingUrl}>
             {isIssuingUrl ? '発行中...' : 'Zoom URLを即時発行'}
           </button>
@@ -191,9 +197,11 @@ function SessionCreateForm({ onNavigate }) {
           </div>
         </div>
       )}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
+      {(message || error) && (
+        <p className={`status-msg ${error ? 'error' : 'success'}`}>
+          {error || message}
+        </p>
+      )}
       {showSuccessCheck && (
         <div className="checkmark-overlay">
           <div className="checkmark-container">
@@ -203,7 +211,6 @@ function SessionCreateForm({ onNavigate }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }

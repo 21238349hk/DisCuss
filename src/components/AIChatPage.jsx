@@ -1,68 +1,57 @@
 import React, { useState } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase';
 import '../styles/AIChatPage.css';
-
 export default function AIChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('consult'); 
+  const [mode, setMode] = useState('consult');
   const handleSend = async () => {
-    if (!input.trim()) return;
-
-    const userMessage = { role: 'user', text: input };
+    const trimmedInput = input.trim();
+    if (!trimmedInput) return;
+    const userMessage = { role: 'user', text: trimmedInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
-
     try {
-      const endpoint = mode === 'gd' ? '/api/ask-gemini-gd' : '/api/ask-gemini';
-      const res = await fetch(`http://localhost:3001${endpoint}`, {
+      // バックエンドサーバーを使用
+      const response = await fetch('https://gd-tanyao.web.app/api/ask-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmedInput })
+        body: JSON.stringify({ message: trimmedInput }),
       });
-
-      const data = await res.json();
-
-      if (mode === 'gd') {
-        const aiMessages = data.replies || [];
-        setMessages((prev) => [...prev, ...aiMessages]);
-      } else {
-        const aiMessage = {
-          role: 'ai',
-          text: data.reply || 'AIからの返答がありませんでした。'
-        };
-        setMessages((prev) => [...prev, aiMessage]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'AIチャットでエラーが発生しました');
       }
-
+      const data = await response.json();
+      const aiMessage = {
+        role: 'ai',
+        text: data.reply || 'AIからの返答がありませんでした。'
+      };
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error('Gemini APIエラー:', error);
+      console.error('AIチャットエラー:', error);
       setMessages((prev) => [
         ...prev,
-        { role: 'ai', text: 'エラーが発生しました。時間をおいて再試行してください。' }
+        { role: 'ai', text: `エラーが発生しました: ${error.message}` }
       ]);
     } finally {
       setLoading(false);
     }
   };
-
-  const handleModeToggle = () => {
+  const toggleMode = () => {
     const newMode = mode === 'consult' ? 'gd' : 'consult';
     setMode(newMode);
-    setMessages([]); 
+    setMessages([]);
   };
-
   return (
     <div className="ai-chat-container">
       <div className="ai-chat-header">
         <h2 className="chat-title">{mode === 'gd' ? 'AIGD' : 'AI相談'}</h2>
-        <button className="aigd-mode" onClick={handleModeToggle}>
+        <button className="aigd-mode" onClick={toggleMode}>
           {mode === 'gd' ? '相談モードに切替' : 'AIGDモードに切替'}
         </button>
       </div>
-
       <div className="chat-box">
 {messages.map((msg, idx) => (
   <div key={idx} className={`chat-row ${msg.role}`}>
@@ -84,7 +73,6 @@ export default function AIChatPage() {
     </div>
   </div>
 ))}
-
         {loading && (
           <div className="chat-row ai">
             <img src="/ai-icon.png" alt="AIアイコン" className="chat-avatar" />
@@ -94,7 +82,6 @@ export default function AIChatPage() {
           </div>
         )}
       </div>
-
       <form
         className="chat-input"
         onSubmit={(e) => {
