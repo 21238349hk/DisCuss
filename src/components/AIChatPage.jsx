@@ -14,7 +14,7 @@ export default function AIChatPage() {
     setLoading(true);
     try {
       // バックエンドサーバーを使用
-      const response = await fetch('https://gd-tanyao.web.app/api/ask-gemini', {
+      const response = await fetch('https://discuss-backend-0l3m.onrender.com/api/ask-gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: trimmedInput }),
