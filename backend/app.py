@@ -17,15 +17,16 @@ CORS(app, resources={
             "http://localhost:5173",
             "http://localhost:5174",
             "http://127.0.0.1:5173",
-            "http://127.0.0.1:5174"
+            "http://127.0.0.1:5174",
+            "https://gd-tanyao.web.app"
         ]
     }
 })
 
 # Zoom APIの新しい認証情報
-ZOOM_CLIENT_ID = os.getenv("ZOOM_CLIENT_ID")
-ZOOM_CLIENT_SECRET = os.getenv("ZOOM_CLIENT_SECRET")
-ZOOM_ACCOUNT_ID = os.getenv("ZOOM_ACCOUNT_ID")
+ZOOM_CLIENT_ID = os.getenv("VITE_ZOOM_CLIENT_ID")
+ZOOM_CLIENT_SECRET = os.getenv("VITE_ZOOM_CLIENT_SECRET")
+ZOOM_ACCOUNT_ID = os.getenv("VITE_ZOOM_ACCOUNT_ID")
 
 # Gemini API設定
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
